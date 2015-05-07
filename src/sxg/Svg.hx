@@ -19,10 +19,13 @@ class Svg {
   var root : Element;
   function new(doc : Document) {
     this.doc = doc;
-    //this.root = doc.cr
+    this.root = createElement("svg");
   }
 
+  inline public function createElement(name : String)
+    return doc.createElementNS(SVG, name);
+
   public function toString() {
-    return "svg???";
+    return doc.elementToString(root);
   }
 }

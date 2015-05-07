@@ -12,4 +12,9 @@ class DomDocument implements Document {
   public function createElementNS(ns : String, name : String) : Element {
     return doc.createElementNS(ns, name);
   }
+
+  public function elementToString(el : Element, ?pretty = false) : String {
+    var node : js.html.Element = cast el;
+    return node.outerHTML;
+  }
 }
