@@ -1,5 +1,5 @@
 package sxg.core;
 
-interface CoreDocument {
+interface Document {
   function createElementNS(ns : String, name : String) : Element;
 }

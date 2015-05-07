@@ -53,36 +53,27 @@ var js__$Boot_HaxeError = function(val) {
 js__$Boot_HaxeError.__super__ = Error;
 js__$Boot_HaxeError.prototype = $extend(Error.prototype,{
 });
-var sxg_Document = function(doc) {
-	this.doc = doc;
-};
-sxg_Document.xml = function() {
-	return new sxg_Document(new sxg_core_XmlDocument());
-};
-sxg_Document.dom = function(document) {
-	return new sxg_Document(new sxg_core_DomDocument(document));
-};
 var sxg_Svg = function(doc) {
 	this.doc = doc;
 };
 sxg_Svg.xml = function() {
-	return new sxg_Svg(sxg_Document.xml());
+	return new sxg_Svg(new sxg_core_XmlDocument());
 };
 sxg_Svg.dom = function(document) {
-	return new sxg_Svg(sxg_Document.dom(document));
+	return new sxg_Svg(new sxg_core_DomDocument(document));
 };
 sxg_Svg.prototype = {
 	toString: function() {
 		return "svg???";
 	}
 };
-var sxg_core_CoreDocument = function() { };
+var sxg_core_Document = function() { };
 var sxg_core_DomDocument = function(document) {
 	if(null == document) {
 		this.doc = window.document;
 	} else this.doc = document;
 };
-sxg_core_DomDocument.__interfaces__ = [sxg_core_CoreDocument];
+sxg_core_DomDocument.__interfaces__ = [sxg_core_Document];
 sxg_core_DomDocument.prototype = {
 	createElementNS: function(ns,name) {
 		return this.doc.createElementNS(ns,name);
@@ -98,7 +89,7 @@ var sxg_core_XmlDocument = function(xml,prefixes) {
 		this.prefixes = _g;
 	} else this.prefixes = prefixes;
 };
-sxg_core_XmlDocument.__interfaces__ = [sxg_core_CoreDocument];
+sxg_core_XmlDocument.__interfaces__ = [sxg_core_Document];
 sxg_core_XmlDocument.prototype = {
 	createElementNS: function(ns,name) {
 		return Xml.createElement(this.p(ns,name));
@@ -112,8 +103,8 @@ sxg_core_XmlDocument.prototype = {
 var __map_reserved = {}
 Xml.Element = 0;
 Xml.Document = 6;
-sxg_Document.SVG = "http://www.w3.org/2000/svg";
-sxg_Document.XMLNS = "http://www.w3.org/2000/xmlns/";
-sxg_Document.XLINK = "http://www.w3.org/1999/xlink";
+sxg_Svg.SVG = "http://www.w3.org/2000/svg";
+sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";
+sxg_Svg.XLINK = "http://www.w3.org/1999/xlink";
 Demo.main();
 })(typeof console != "undefined" ? console : {log:function(){}});

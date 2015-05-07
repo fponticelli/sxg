@@ -1,8 +1,8 @@
 package sxg.core;
 
-import sxg.Document.*;
+import sxg.Svg.*;
 
-class XmlDocument implements CoreDocument {
+class XmlDocument implements Document {
   var xml : Xml;
   var prefixes : Map<String, String>;
 
