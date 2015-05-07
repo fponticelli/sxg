@@ -1,9 +1,11 @@
-package sgx.core;
+package sxg.core;
 
-class XmlDocument implements sxg.Document {
+class XmlDocument implements CoreDocument {
   var xml : Xml;
 
   public function new(?xml : Xml) {
-    //this.xml = xml == null ? 
+    this.xml = null == xml ? Xml.createDocument() : xml;
+
+    //this.xml = xml == null ?
   }
 }
