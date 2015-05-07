@@ -1,11 +1,15 @@
 package sxg.core;
 
+import js.html.Document;
+
 class DomDocument implements CoreDocument {
-  var doc : Xml;
+  var doc : Document;
 
-  public function new(?document : js.html.Document) {
+  public function new(?document : Document) {
     this.doc = null == document ? untyped __js__("window.document") : document;
+  }
 
-    //this.xml = xml == null ?
+  public function createElementNS(ns : String, name : String) : Element {
+    return doc.createElementNS(ns, name);
   }
 }

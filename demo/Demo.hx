@@ -3,10 +3,10 @@ import sxg.core.*;
 
 class Demo {
   static function main() {
-    trace("hello");
-  }
+    var xml = Svg.xml(),
+        dom = Svg.dom();
 
-  static function xml() {
-    var doc = new XmlDocument();
+    trace(xml.toString());
+    trace(dom.toString());
   }
 }
