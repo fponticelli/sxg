@@ -21,4 +21,20 @@ class DomDocument implements Document<El> {
 
   public function removeChild(parent : El, child : El)
     parent.removeChild(child);
+
+  public function setAttribute(el : El, name : String, value : String) : String {
+    el.setAttribute(name, value);
+    return value;
+  }
+
+  public function setFloatAttribute(el : El, name : String, value : Float) : Float {
+    el.setAttribute(name, ""+value);
+    return value;
+  }
+
+  public function getAttribute(el : El, name : String)
+    return el.getAttribute(name);
+
+  public function getFloatAttribute(el : El, name : String)
+    return Std.parseFloat(el.getAttribute(name));
 }

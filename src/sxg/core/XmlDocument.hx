@@ -36,8 +36,21 @@ class XmlDocument implements Document<Xml> {
   public function removeChild(parent : Xml, child : Xml)
     parent.removeChild(child);
 
-  public function setAttribute(el : Xml, name : String, value : String)
+  public function setAttribute(el : Xml, name : String, value : String) {
     el.set(name, value);
+    return value;
+  }
+
+  public function setFloatAttribute(el : Xml, name : String, value : Float) {
+    el.set(name, ""+value);
+    return value;
+  }
+
+  public function getAttribute(el : Xml, name : String)
+    return el.get(name);
+
+  public function getFloatAttribute(el : Xml, name : String)
+    return Std.parseFloat(el.get(name));
 
   static function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),

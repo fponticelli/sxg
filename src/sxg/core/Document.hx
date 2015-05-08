@@ -5,4 +5,8 @@ interface Document<T> {
   function elementToString(el : T, ?pretty : Bool = false) : String;
   function appendChild(parent : T, child : T) : Void;
   function removeChild(parent : T, child : T) : Void;
+  function setAttribute(el : T, name : String, value : String) : String;
+  function setFloatAttribute(el : T, name : String, value : Float) : Float;
+  function getAttribute(el : T, name : String) : String;
+  function getFloatAttribute(el : T, name : String) : Float;
 }
