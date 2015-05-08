@@ -16,11 +16,14 @@ Demo.main = function() {
 	Demo.render(xml);
 	Demo.render(dom);
 	console.log("\n" + xml.toString());
-	console.log("\n" + dom.toString());
 	window.document.body.appendChild(dom.el);
 };
 Demo.render = function(svg) {
-	var r = svg.rect();
+	var r = svg.rect(15,20,100,40);
+	svg.arc(100,200,0,30,40,60);
+	svg.arc(100,200,35,45,40,60);
+	svg.arc(100,200,50,300,40,60);
+	svg.circle(100,200,35);
 };
 var EReg = function(r,opt) {
 	opt = opt.split("u").join("");
@@ -171,6 +174,9 @@ var Std = function() { };
 Std.__name__ = ["Std"];
 Std.string = function(s) {
 	return js_Boot.__string_rec(s,"");
+};
+Std.parseFloat = function(x) {
+	return parseFloat(x);
 };
 Std.random = function(x) {
 	if(x <= 0) return 0; else return Math.floor(Math.random() * x);
@@ -517,8 +523,14 @@ sxg_Element.__name__ = ["sxg","Element"];
 sxg_Element.prototype = {
 	el: null
 	,doc: null
-	,rect: function() {
-		return this.add(new sxg_Rect(this.doc));
+	,arc: function(cx,cy,startAngle,endAngle,startRadius,endRadius) {
+		return this.add(new sxg_Arc(this.doc,cx,cy,startAngle,endAngle,startRadius,endRadius));
+	}
+	,circle: function(cx,cy,radius) {
+		return this.add(new sxg_Circle(this.doc,cx,cy,radius));
+	}
+	,rect: function(x,y,w,h) {
+		return this.add(new sxg_Rect(this.doc,x,y,w,h));
 	}
 	,add: function(svg) {
 		this.doc.appendChild(this.el,svg.el);
@@ -536,8 +548,86 @@ sxg_Element.prototype = {
 	}
 	,__class__: sxg_Element
 };
-var sxg_Rect = function(doc) {
+var sxg_Arc = function(doc,cx,cy,startAngle,endAngle,innerRadius,outerRadius) {
+	var _g = this;
+	sxg_Element.call(this,doc,"path");
+	var trigger = thx_Functions.noop;
+	this.shape = new thx_geom_d2_Arc((function($this) {
+		var $r;
+		var p = new thx_geom_core_LinkedXY(function() {
+			return cx;
+		},function() {
+			return cy;
+		},function(v) {
+			cx = v;
+			trigger();
+			return v;
+		},function(v1) {
+			cy = v1;
+			trigger();
+			return v1;
+		});
+		$r = p;
+		return $r;
+	}(this)),new thx_geom_core_LinkedDim(function() {
+		return startAngle * 0.01745329251994329577;
+	},function(v2) {
+		startAngle = v2 * 57.29577951308232088;
+		trigger();
+		return v2;
+	}),new thx_geom_core_LinkedDim(function() {
+		return endAngle * 0.01745329251994329577;
+	},function(v3) {
+		endAngle = v3 * 57.29577951308232088;
+		trigger();
+		return v3;
+	}),(function($this) {
+		var $r;
+		var r = new thx_geom_core_LinkedDim(function() {
+			return innerRadius;
+		},function(v4) {
+			innerRadius = v4;
+			trigger();
+			return v4;
+		});
+		$r = r;
+		return $r;
+	}(this)),(function($this) {
+		var $r;
+		var r1 = new thx_geom_core_LinkedDim(function() {
+			return outerRadius;
+		},function(v5) {
+			outerRadius = v5;
+			trigger();
+			return v5;
+		});
+		$r = r1;
+		return $r;
+	}(this)));
+	trigger = function() {
+		doc.setAttribute(_g.el,"d",_g.shape.path.toSVGPath());
+	};
+	trigger();
+};
+sxg_Arc.__name__ = ["sxg","Arc"];
+sxg_Arc.__super__ = sxg_Element;
+sxg_Arc.prototype = $extend(sxg_Element.prototype,{
+	shape: null
+	,__class__: sxg_Arc
+});
+var sxg_Circle = function(doc,cx,cy,radius) {
+	sxg_Element.call(this,doc,"circle");
+	this.shape = new thx_geom_d2_Circle(sxg_core_Geom.linkedPosition(doc,this.el,"cx","cy",cx,cy),sxg_core_Geom.linkedRadius(doc,this.el,radius));
+};
+sxg_Circle.__name__ = ["sxg","Circle"];
+sxg_Circle.__super__ = sxg_Element;
+sxg_Circle.prototype = $extend(sxg_Element.prototype,{
+	shape: null
+	,__class__: sxg_Circle
+});
+var sxg_Rect = function(doc,x,y,w,h) {
 	sxg_Element.call(this,doc,"rect");
+	this.shape = new thx_geom_d2_Rect(sxg_core_Geom.linkedPosition(doc,this.el,null,null,x,y),sxg_core_Geom.linkedSize(doc,this.el,w,h));
 };
 sxg_Rect.__name__ = ["sxg","Rect"];
 sxg_Rect.__super__ = sxg_Element;
@@ -568,6 +658,10 @@ sxg_core_Document.prototype = {
 	,elementToString: null
 	,appendChild: null
 	,removeChild: null
+	,setAttribute: null
+	,setFloatAttribute: null
+	,getAttribute: null
+	,getFloatAttribute: null
 	,__class__: sxg_core_Document
 };
 var sxg_core_DomDocument = function(document) {
@@ -592,15 +686,92 @@ sxg_core_DomDocument.prototype = {
 	,removeChild: function(parent,child) {
 		parent.removeChild(child);
 	}
+	,setAttribute: function(el,name,value) {
+		el.setAttribute(name,value);
+		return value;
+	}
+	,setFloatAttribute: function(el,name,value) {
+		el.setAttribute(name,"" + value);
+		return value;
+	}
+	,getAttribute: function(el,name) {
+		return el.getAttribute(name);
+	}
+	,getFloatAttribute: function(el,name) {
+		return Std.parseFloat(el.getAttribute(name));
+	}
 	,__class__: sxg_core_DomDocument
 };
 var sxg_core_Geom = function() { };
 sxg_core_Geom.__name__ = ["sxg","core","Geom"];
 sxg_core_Geom.linkedSize = function(doc,el,width,height) {
-	var size = new thx_geom_core_MutableXY(0,0);
-	size.set_x(width);
-	size.set_y(height);
+	var getWidth = (function(f,el1,a1) {
+		return function() {
+			return f(el1,a1);
+		};
+	})($bind(doc,doc.getFloatAttribute),el,"width");
+	var getHeight = (function(f1,el2,a11) {
+		return function() {
+			return f1(el2,a11);
+		};
+	})($bind(doc,doc.getFloatAttribute),el,"height");
+	var setWidth = (function(f2,el3,a12) {
+		return function(a2) {
+			return f2(el3,a12,a2);
+		};
+	})($bind(doc,doc.setFloatAttribute),el,"width");
+	var setHeight = (function(f3,el4,a13) {
+		return function(a21) {
+			return f3(el4,a13,a21);
+		};
+	})($bind(doc,doc.setFloatAttribute),el,"height");
+	var size = new thx_geom_core_LinkedXY(getWidth,getHeight,setWidth,setHeight);
+	if(null != width) size.set_x(width);
+	if(null != height) size.set_y(height);
 	return size;
+};
+sxg_core_Geom.linkedPosition = function(doc,el,xname,yname,x,y) {
+	if(yname == null) yname = "y";
+	if(xname == null) xname = "x";
+	var getX = (function(f,el1,a1) {
+		return function() {
+			return f(el1,a1);
+		};
+	})($bind(doc,doc.getFloatAttribute),el,xname);
+	var getY = (function(f1,el2,a11) {
+		return function() {
+			return f1(el2,a11);
+		};
+	})($bind(doc,doc.getFloatAttribute),el,yname);
+	var setX = (function(f2,el3,a12) {
+		return function(a2) {
+			return f2(el3,a12,a2);
+		};
+	})($bind(doc,doc.setFloatAttribute),el,xname);
+	var setY = (function(f3,el4,a13) {
+		return function(a21) {
+			return f3(el4,a13,a21);
+		};
+	})($bind(doc,doc.setFloatAttribute),el,yname);
+	var p = new thx_geom_core_LinkedXY(getX,getY,setX,setY);
+	if(null != x) p.set_x(x);
+	if(null != y) p.set_y(y);
+	return p;
+};
+sxg_core_Geom.linkedRadius = function(doc,el,radius) {
+	var getRadius = (function(f,el1,a1) {
+		return function() {
+			return f(el1,a1);
+		};
+	})($bind(doc,doc.getFloatAttribute),el,"r");
+	var setRadius = (function(f1,el2,a11) {
+		return function(a2) {
+			return f1(el2,a11,a2);
+		};
+	})($bind(doc,doc.setFloatAttribute),el,"r");
+	var r = new thx_geom_core_LinkedDim(getRadius,setRadius);
+	if(null != radius) r.set_coord(radius);
+	return r;
 };
 var sxg_core_XmlDocument = function(xml) {
 	if(null == xml) this.xml = Xml.createDocument(); else this.xml = xml;
@@ -674,6 +845,17 @@ sxg_core_XmlDocument.prototype = {
 	}
 	,setAttribute: function(el,name,value) {
 		el.set(name,value);
+		return value;
+	}
+	,setFloatAttribute: function(el,name,value) {
+		el.set(name,"" + value);
+		return value;
+	}
+	,getAttribute: function(el,name) {
+		return el.get(name);
+	}
+	,getFloatAttribute: function(el,name) {
+		return Std.parseFloat(el.get(name));
 	}
 	,__class__: sxg_core_XmlDocument
 };
@@ -2393,6 +2575,58 @@ thx_geom__$Matrix23_Matrix23_$Impl_$.set_e = function(this1,v) {
 thx_geom__$Matrix23_Matrix23_$Impl_$.set_f = function(this1,v) {
 	return this1.set_f(v);
 };
+var thx_geom_core_Dim = function() { };
+thx_geom_core_Dim.__name__ = ["thx","geom","core","Dim"];
+thx_geom_core_Dim.prototype = {
+	get_coord: null
+	,set_coord: null
+	,clone: null
+	,__class__: thx_geom_core_Dim
+};
+var thx_geom_core_DimBool = function() { };
+thx_geom_core_DimBool.__name__ = ["thx","geom","core","DimBool"];
+thx_geom_core_DimBool.prototype = {
+	get_value: null
+	,set_value: null
+	,clone: null
+	,__class__: thx_geom_core_DimBool
+};
+var thx_geom_core_ImmutableDim = function(coord) {
+	this._coord = coord;
+};
+thx_geom_core_ImmutableDim.__name__ = ["thx","geom","core","ImmutableDim"];
+thx_geom_core_ImmutableDim.__interfaces__ = [thx_geom_core_Dim];
+thx_geom_core_ImmutableDim.prototype = {
+	_coord: null
+	,clone: function() {
+		return new thx_geom_core_MutableDim(this._coord);
+	}
+	,get_coord: function() {
+		return this._coord;
+	}
+	,set_coord: function(v) {
+		throw new js__$Boot_HaxeError("this instance of Dim cannot be modified");
+	}
+	,__class__: thx_geom_core_ImmutableDim
+};
+var thx_geom_core_ImmutableDimBool = function(value) {
+	this._value = value;
+};
+thx_geom_core_ImmutableDimBool.__name__ = ["thx","geom","core","ImmutableDimBool"];
+thx_geom_core_ImmutableDimBool.__interfaces__ = [thx_geom_core_DimBool];
+thx_geom_core_ImmutableDimBool.prototype = {
+	_value: null
+	,clone: function() {
+		return new thx_geom_core_MutableDimBool(this._value);
+	}
+	,get_value: function() {
+		return this._value;
+	}
+	,set_value: function(v) {
+		throw new js__$Boot_HaxeError("this instance of DimBool cannot be modified");
+	}
+	,__class__: thx_geom_core_ImmutableDimBool
+};
 var thx_geom_core_XY = function() { };
 thx_geom_core_XY.__name__ = ["thx","geom","core","XY"];
 thx_geom_core_XY.prototype = {
@@ -2429,6 +2663,46 @@ thx_geom_core_ImmutableXY.prototype = {
 	}
 	,__class__: thx_geom_core_ImmutableXY
 };
+var thx_geom_core_LinkedDim = function(getCoord,setCoord) {
+	this.getCoord = getCoord;
+	this.setCoord = setCoord;
+};
+thx_geom_core_LinkedDim.__name__ = ["thx","geom","core","LinkedDim"];
+thx_geom_core_LinkedDim.__interfaces__ = [thx_geom_core_Dim];
+thx_geom_core_LinkedDim.prototype = {
+	getCoord: null
+	,setCoord: null
+	,clone: function() {
+		return new thx_geom_core_MutableDim(this.getCoord());
+	}
+	,get_coord: function() {
+		return this.getCoord();
+	}
+	,set_coord: function(v) {
+		return this.setCoord(v);
+	}
+	,__class__: thx_geom_core_LinkedDim
+};
+var thx_geom_core_LinkedDimBool = function(getValue,setValue) {
+	this.getValue = getValue;
+	this.setValue = setValue;
+};
+thx_geom_core_LinkedDimBool.__name__ = ["thx","geom","core","LinkedDimBool"];
+thx_geom_core_LinkedDimBool.__interfaces__ = [thx_geom_core_DimBool];
+thx_geom_core_LinkedDimBool.prototype = {
+	getValue: null
+	,setValue: null
+	,clone: function() {
+		return new thx_geom_core_MutableDimBool(this.getValue());
+	}
+	,get_value: function() {
+		return this.getValue();
+	}
+	,set_value: function(v) {
+		return this.setValue(v);
+	}
+	,__class__: thx_geom_core_LinkedDimBool
+};
 var thx_geom_core_LinkedXY = function(getX,getY,setX,setY) {
 	this.getX = getX;
 	this.getY = getY;
@@ -2458,6 +2732,42 @@ thx_geom_core_LinkedXY.prototype = {
 		return this.setY(v);
 	}
 	,__class__: thx_geom_core_LinkedXY
+};
+var thx_geom_core_MutableDim = function(coord) {
+	this._coord = coord;
+};
+thx_geom_core_MutableDim.__name__ = ["thx","geom","core","MutableDim"];
+thx_geom_core_MutableDim.__interfaces__ = [thx_geom_core_Dim];
+thx_geom_core_MutableDim.prototype = {
+	_coord: null
+	,clone: function() {
+		return new thx_geom_core_MutableDim(this._coord);
+	}
+	,get_coord: function() {
+		return this._coord;
+	}
+	,set_coord: function(v) {
+		return this._coord = v;
+	}
+	,__class__: thx_geom_core_MutableDim
+};
+var thx_geom_core_MutableDimBool = function(value) {
+	this._value = value;
+};
+thx_geom_core_MutableDimBool.__name__ = ["thx","geom","core","MutableDimBool"];
+thx_geom_core_MutableDimBool.__interfaces__ = [thx_geom_core_DimBool];
+thx_geom_core_MutableDimBool.prototype = {
+	_value: null
+	,clone: function() {
+		return new thx_geom_core_MutableDimBool(this._value);
+	}
+	,get_value: function() {
+		return this._value;
+	}
+	,set_value: function(v) {
+		return this._value = v;
+	}
+	,__class__: thx_geom_core_MutableDimBool
 };
 var thx_geom_core_MutableM23 = function(a,b,c,d,e,f) {
 	this._a = a;
@@ -2540,59 +2850,905 @@ thx_geom_core_MutableXY.prototype = {
 	}
 	,__class__: thx_geom_core_MutableXY
 };
+var thx_geom_d2__$Angle_Angle_$Impl_$ = {};
+thx_geom_d2__$Angle_Angle_$Impl_$.__name__ = ["thx","geom","d2","_Angle","Angle_Impl_"];
+thx_geom_d2__$Angle_Angle_$Impl_$.fromFloat = function(r) {
+	var r1 = new thx_geom_core_MutableDim(r);
+	return r1;
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.create = function(r) {
+	var r1 = new thx_geom_core_MutableDim(r);
+	return r1;
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.linked = function(getAngle,setAngle) {
+	return new thx_geom_core_LinkedDim(getAngle,setAngle);
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.immutable = function(r) {
+	return new thx_geom_core_ImmutableDim(r);
+};
+thx_geom_d2__$Angle_Angle_$Impl_$._new = function(r) {
+	return r;
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.equals = function(this1,p) {
+	return this1.get_coord() == p.get_coord();
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.notEquals = function(this1,p) {
+	return !(this1.get_coord() == p.get_coord());
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.nearEquals = function(this1,p) {
+	return thx_Floats.nearEquals(this1.get_coord(),p.get_coord());
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.notNearEquals = function(this1,p) {
+	return !thx_geom_d2__$Angle_Angle_$Impl_$.nearEquals(this1,p);
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.isZero = function(this1) {
+	return this1.get_coord() == 0;
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.isNearZero = function(this1) {
+	return thx_Floats.nearZero(this1.get_coord());
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.clone = function(this1) {
+	return this1.clone();
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.toString = function(this1) {
+	return "Angle(" + this1.get_coord() * 57.29577951308232088 + "°)";
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.toFloat = function(this1) {
+	return this1.get_coord();
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.get_radians = function(this1) {
+	return this1.get_coord();
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.set_radians = function(this1,v) {
+	return this1.set_coord(v);
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.get_degrees = function(this1) {
+	return this1.get_coord() * 57.29577951308232088;
+};
+thx_geom_d2__$Angle_Angle_$Impl_$.set_degrees = function(this1,v) {
+	return this1.set_coord(v * 0.01745329251994329577);
+};
 var thx_geom_d2_IShape = function() { };
 thx_geom_d2_IShape.__name__ = ["thx","geom","d2","IShape"];
 thx_geom_d2_IShape.prototype = {
 	box: null
 	,__class__: thx_geom_d2_IShape
 };
+var thx_geom_d2_Arc = function(center,startAngle,endAngle,innerRadius,outerRadius) {
+	this.center = center;
+	this.startAngle = startAngle;
+	this.endAngle = endAngle;
+	this.innerRadius = innerRadius;
+	this.outerRadius = outerRadius;
+	var setter = function(v) {
+		throw new js__$Boot_HaxeError("cannot set " + v);
+	};
+	var sa = new thx_geom_core_LinkedDim(function() {
+		return Math.min(startAngle.get_coord(),endAngle.get_coord());
+	},function(v1) {
+		return startAngle.set_coord(v1);
+	});
+	var ea = new thx_geom_core_LinkedDim(function() {
+		return Math.max(startAngle.get_coord(),endAngle.get_coord());
+	},function(v2) {
+		return endAngle.set_coord(v2);
+	});
+	var ri;
+	var r2 = new thx_geom_core_LinkedDim(function() {
+		return Math.min(innerRadius.get_coord(),outerRadius.get_coord());
+	},function(v10) {
+		return innerRadius.set_coord(v10);
+	});
+	ri = r2;
+	var ro;
+	var r3 = new thx_geom_core_LinkedDim(function() {
+		return Math.max(innerRadius.get_coord(),outerRadius.get_coord());
+	},function(v11) {
+		return outerRadius.set_coord(v11);
+	});
+	ro = r3;
+	var spo;
+	spo = (function($this) {
+		var $r;
+		var p = new thx_geom_core_LinkedXY(function() {
+			var v12;
+			{
+				var angle1 = sa.get_coord();
+				v12 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle1),Math.sin(angle1));
+			}
+			return center.get_x() + v12.get_x() * ro.get_coord();
+		},function() {
+			var v13;
+			{
+				var angle2 = sa.get_coord();
+				v13 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle2),Math.sin(angle2));
+			}
+			return center.get_y() + v13.get_y() * ro.get_coord();
+		},setter,setter);
+		$r = p;
+		return $r;
+	}(this));
+	var epo;
+	epo = (function($this) {
+		var $r;
+		var p1 = new thx_geom_core_LinkedXY(function() {
+			var v14;
+			{
+				var angle3 = ea.get_coord();
+				v14 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle3),Math.sin(angle3));
+			}
+			return center.get_x() + v14.get_x() * ro.get_coord();
+		},function() {
+			var v15;
+			{
+				var angle4 = ea.get_coord();
+				v15 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle4),Math.sin(angle4));
+			}
+			return center.get_y() + v15.get_y() * ro.get_coord();
+		},setter,setter);
+		$r = p1;
+		return $r;
+	}(this));
+	var spi;
+	spi = (function($this) {
+		var $r;
+		var p2 = new thx_geom_core_LinkedXY(function() {
+			var v16;
+			{
+				var angle5 = sa.get_coord();
+				v16 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle5),Math.sin(angle5));
+			}
+			return center.get_x() + v16.get_x() * ri.get_coord();
+		},function() {
+			var v17;
+			{
+				var angle6 = sa.get_coord();
+				v17 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle6),Math.sin(angle6));
+			}
+			return center.get_y() + v17.get_y() * ri.get_coord();
+		},setter,setter);
+		$r = p2;
+		return $r;
+	}(this));
+	var epi;
+	epi = (function($this) {
+		var $r;
+		var p3 = new thx_geom_core_LinkedXY(function() {
+			var v18;
+			{
+				var angle7 = ea.get_coord();
+				v18 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle7),Math.sin(angle7));
+			}
+			return center.get_x() + v18.get_x() * ri.get_coord();
+		},function() {
+			var v19;
+			{
+				var angle8 = ea.get_coord();
+				v19 = thx_geom_d2__$Vector_Vector_$Impl_$.create(Math.cos(angle8),Math.sin(angle8));
+			}
+			return center.get_y() + v19.get_y() * ri.get_coord();
+		},setter,setter);
+		$r = p3;
+		return $r;
+	}(this));
+	var angle = new thx_geom_core_LinkedDim(function() {
+		return ea.get_coord() - sa.get_coord();
+	},function(v3) {
+		var v4 = sa.get_coord() + v3;
+		ea.set_coord(v4);
+		return v3;
+	});
+	var vri = new thx_geom_core_LinkedXY(function() {
+		return ri.get_coord();
+	},function() {
+		return ri.get_coord();
+	},function(v5) {
+		return ri.set_coord(v5);
+	},function(v6) {
+		return ri.set_coord(v6);
+	});
+	var vro = new thx_geom_core_LinkedXY(function() {
+		return ro.get_coord();
+	},function() {
+		return ro.get_coord();
+	},function(v7) {
+		return ro.set_coord(v7);
+	},function(v8) {
+		return ro.set_coord(v8);
+	});
+	var sw = new thx_geom_core_LinkedDimBool(function() {
+		return angle.get_coord() * 57.29577951308232088 >= 180;
+	},function(v9) {
+		throw new js__$Boot_HaxeError("cannot set " + (v9 == null?"null":"" + v9));
+	});
+	var oa = new thx_geom_d2_ArcSegment(spo,vro,sw,(function($this) {
+		var $r;
+		var r = new thx_geom_core_MutableDimBool(true);
+		$r = r;
+		return $r;
+	}(this)),angle,epo);
+	var ia = new thx_geom_d2_ArcSegment(epi,vri,sw,(function($this) {
+		var $r;
+		var r1 = new thx_geom_core_MutableDimBool(false);
+		$r = r1;
+		return $r;
+	}(this)),angle,spi);
+	this.path = new thx_geom_d2_Path([new thx_geom_d2_LineSegment(spi,spo),oa,new thx_geom_d2_LineSegment(epo,epi),ia]);
+	this.box = this.path.box;
+};
+thx_geom_d2_Arc.__name__ = ["thx","geom","d2","Arc"];
+thx_geom_d2_Arc.__interfaces__ = [thx_geom_d2_IShape];
+thx_geom_d2_Arc.prototype = {
+	center: null
+	,startAngle: null
+	,endAngle: null
+	,innerRadius: null
+	,outerRadius: null
+	,path: null
+	,box: null
+	,toString: function() {
+		return "Arc(" + this.center.get_x() + "," + this.center.get_y() + "; " + this.startAngle.get_coord() * 57.29577951308232088 + " to " + this.startAngle.get_coord() * 57.29577951308232088 + ";" + this.innerRadius.get_coord() + "," + this.outerRadius.get_coord() + ")";
+	}
+	,__class__: thx_geom_d2_Arc
+};
+var thx_geom_d2_Segment = function(start,end,cloud) {
+	this.start = start;
+	this.end = end;
+	this.box = thx_geom_d2_Rect.fromPoints(cloud);
+};
+thx_geom_d2_Segment.__name__ = ["thx","geom","d2","Segment"];
+thx_geom_d2_Segment.prototype = {
+	start: null
+	,end: null
+	,box: null
+	,equals: function(other) {
+		return thx_Types.sameType(this,other) && (function($this) {
+			var $r;
+			var this1 = $this.start;
+			var p = other.start;
+			$r = this1.get_x() == p.get_x() && this1.get_y() == p.get_y();
+			return $r;
+		}(this)) && (function($this) {
+			var $r;
+			var this2 = $this.end;
+			var p1 = other.end;
+			$r = this2.get_x() == p1.get_x() && this2.get_y() == p1.get_y();
+			return $r;
+		}(this));
+	}
+	,nearEquals: function(other) {
+		return thx_Types.sameType(this,other) && thx_geom_d2__$Point_Point_$Impl_$.nearEquals(this.start,other.start) && thx_geom_d2__$Point_Point_$Impl_$.nearEquals(this.end,other.end);
+	}
+	,toVector: function() {
+		var _g = this;
+		return new thx_geom_core_LinkedXY(function() {
+			return _g.end.get_x() - _g.start.get_x();
+		},function() {
+			return _g.end.get_y() - _g.start.get_y();
+		},function(v) {
+			var v1 = _g.start.get_x() + v;
+			_g.end.set_x(v1);
+			return v;
+		},function(v2) {
+			var v3 = _g.start.get_y() + v2;
+			_g.end.set_y(v3);
+			return v2;
+		});
+	}
+	,toString: function() {
+		throw new js__$Boot_HaxeError("Segment.toString() is abstract and must be overwritten");
+	}
+	,__class__: thx_geom_d2_Segment
+};
+var thx_geom_d2_ArcSegment = function(start,radius,largeArcFlag,sweepFlag,xAxisRotate,end) {
+	thx_geom_d2_Segment.call(this,start,end,[start,end]);
+	this.radius = radius;
+	this.largeArcFlag = largeArcFlag;
+	this.sweepFlag = sweepFlag;
+	this.xAxisRotate = xAxisRotate;
+};
+thx_geom_d2_ArcSegment.__name__ = ["thx","geom","d2","ArcSegment"];
+thx_geom_d2_ArcSegment.toCubic = function(arc) {
+	var values = thx_geom_d2_ArcSegment.arcToCubic(arc.start.get_x(),arc.start.get_y(),arc.radius.get_x(),arc.radius.get_y(),arc.xAxisRotate.get_coord(),arc.largeArcFlag.get_value(),arc.sweepFlag.get_value(),arc.end.get_x(),arc.end.get_y(),null);
+	var start = arc.start;
+	var result = [];
+	var _g1 = 0;
+	var _g = values.length / 3 | 0;
+	while(_g1 < _g) {
+		var i = _g1++;
+		result.push(new thx_geom_d2_CubicCurveSegment(start,new thx_geom_core_MutableXY(values[i * 3][0],values[i * 3][1]),new thx_geom_core_MutableXY(values[i * 3 + 1][0],values[i * 3 + 1][1]),start = new thx_geom_core_MutableXY(values[i * 3 + 2][0],values[i * 3 + 2][1])));
+	}
+	return result;
+};
+thx_geom_d2_ArcSegment.arcToCubic = function(x1,y1,rx,ry,angle,large_arc_flag,sweep_flag,x2,y2,recursive) {
+	var rotate = function(x,y,rad) {
+		return { x : x * Math.cos(rad) - y * Math.sin(rad), y : x * Math.sin(rad) + y * Math.cos(rad)};
+	};
+	var _120 = Math.PI * 120 / 180;
+	var res = [];
+	var xy;
+	var f1;
+	var f2;
+	var cx;
+	var cy;
+	if(null == recursive) {
+		xy = rotate(x1,y1,-angle);
+		x1 = xy.x;
+		y1 = xy.y;
+		xy = rotate(x2,y2,-angle);
+		x2 = xy.x;
+		y2 = xy.y;
+		var cos = Math.cos(angle);
+		var sin = Math.sin(angle);
+		var x3 = (x1 - x2) / 2;
+		var y3 = (y1 - y2) / 2;
+		var h = x3 * x3 / (rx * rx) + y3 * y3 / (ry * ry);
+		if(h > 1) {
+			h = Math.sqrt(h);
+			rx = h * rx;
+			ry = h * ry;
+		}
+		var rx2 = rx * rx;
+		var ry2 = ry * ry;
+		var k;
+		k = (large_arc_flag == sweep_flag?-1:1) * Math.sqrt(Math.abs((rx2 * ry2 - rx2 * y3 * y3 - ry2 * x3 * x3) / (rx2 * y3 * y3 + ry2 * x3 * x3)));
+		cx = k * rx * y3 / ry + (x1 + x2) / 2;
+		cy = k * -ry * x3 / rx + (y1 + y2) / 2;
+		f1 = Math.asin(thx_Floats.roundTo((y1 - cy) / ry,9));
+		f2 = Math.asin(thx_Floats.roundTo((y2 - cy) / ry,9));
+		if(x1 < cx) f1 = Math.PI - f1; else f1 = f1;
+		if(x2 < cx) f2 = Math.PI - f2; else f2 = f2;
+		if(f1 < 0) f1 = Math.PI * 2 + f1;
+		if(f2 < 0) f2 = Math.PI * 2 + f2;
+		if(sweep_flag && f1 > f2) f1 = f1 - Math.PI * 2;
+		if(!sweep_flag && f2 > f1) f2 = f2 - Math.PI * 2;
+	} else {
+		f1 = recursive[0];
+		f2 = recursive[1];
+		cx = recursive[2];
+		cy = recursive[3];
+	}
+	var df = f2 - f1;
+	if(Math.abs(df) > _120) {
+		var f2old = f2;
+		var x2old = x2;
+		var y2old = y2;
+		f2 = f1 + _120 * (sweep_flag && f2 > f1?1:-1);
+		x2 = cx + rx * Math.cos(f2);
+		y2 = cy + ry * Math.sin(f2);
+		res = thx_geom_d2_ArcSegment.arcToCubic(x2,y2,rx,ry,angle,false,sweep_flag,x2old,y2old,[f2,f2old,cx,cy]);
+	}
+	df = f2 - f1;
+	var c1 = Math.cos(f1);
+	var s1 = Math.sin(f1);
+	var c2 = Math.cos(f2);
+	var s2 = Math.sin(f2);
+	var t = Math.tan(df / 4);
+	var hx = 1.33333333333333326 * rx * t;
+	var hy = 1.33333333333333326 * ry * t;
+	var m1_0 = x1;
+	var m1_1 = y1;
+	var m2 = [x1 + hx * s1,y1 - hy * c1];
+	var m3 = [x2 + hx * s2,y2 - hy * c2];
+	var m4 = [x2,y2];
+	m2[0] = 2 * m1_0 - m2[0];
+	m2[1] = 2 * m1_1 - m2[1];
+	if(null != recursive) return [m2,m3,m4].concat(res); else {
+		var res2 = thx_Arrays.flatten([m2,m3,m4].concat(res));
+		var newres = [];
+		var ii = res2.length;
+		var i = 0;
+		var c = 0;
+		while(i < ii) {
+			newres[c++] = [rotate(res2[i],res2[i + 1],angle).x,rotate(res2[++i - 1],res2[i],angle).y];
+			i++;
+		}
+		return newres;
+	}
+};
+thx_geom_d2_ArcSegment.__super__ = thx_geom_d2_Segment;
+thx_geom_d2_ArcSegment.prototype = $extend(thx_geom_d2_Segment.prototype,{
+	radius: null
+	,largeArcFlag: null
+	,sweepFlag: null
+	,xAxisRotate: null
+	,equals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && (function($this) {
+			var $r;
+			var this1 = $this.radius;
+			var p = other.radius;
+			$r = this1.get_x() == p.get_x() && this1.get_y() == p.get_y();
+			return $r;
+		}(this)) && this.largeArcFlag.get_value() == other.largeArcFlag.get_value() && this.sweepFlag.get_value() == other.sweepFlag.get_value() && this.xAxisRotate.get_coord() == other.xAxisRotate.get_coord();
+	}
+	,nearEquals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && thx_geom_d2__$Vector_Vector_$Impl_$.nearEquals(this.radius,other.radius) && this.largeArcFlag.get_value() == other.largeArcFlag.get_value() && this.sweepFlag.get_value() == other.sweepFlag.get_value() && thx_geom_d2__$Angle_Angle_$Impl_$.nearEquals(this.xAxisRotate,other.xAxisRotate);
+	}
+	,toString: function() {
+		return "ArcSegment(sx:" + this.start.get_x() + ",sy:" + this.start.get_y() + ",rot:" + this.xAxisRotate.get_coord() * 57.29577951308232088 + "°,laf:" + ("Flag(" + Std.string(this.largeArcFlag.get_value()) + ")") + ",sf:" + ("Flag(" + Std.string(this.sweepFlag.get_value()) + ")") + ",ex:" + this.end.get_x() + ",ey:" + this.end.get_y() + ")";
+	}
+	,__class__: thx_geom_d2_ArcSegment
+});
+var thx_geom_d2_Circle = function(center,radius) {
+	this.center = center;
+	this.radius = radius;
+	this.box = thx_geom_d2_Rect.fromPoints([this.get_bottomLeft(),this.get_topRight()]);
+};
+thx_geom_d2_Circle.__name__ = ["thx","geom","d2","Circle"];
+thx_geom_d2_Circle.__interfaces__ = [thx_geom_d2_IShape];
+thx_geom_d2_Circle.fromPoints = function(a,b) {
+	var c;
+	c = (function($this) {
+		var $r;
+		var p = new thx_geom_core_LinkedXY(function() {
+			return (a.get_x() + b.get_x()) / 2;
+		},function() {
+			return (a.get_y() + b.get_y()) / 2;
+		},function(x) {
+			var dx = x - (a.get_x() + b.get_x()) / 2;
+			var v = a.get_x() + dx;
+			a.set_x(v);
+			return x;
+		},function(y) {
+			var dy = y - (a.get_y() + b.get_y()) / 2;
+			var v1 = a.get_y() + dy;
+			a.set_y(v1);
+			return y;
+		});
+		$r = p;
+		return $r;
+	}(this));
+	var r;
+	var r1 = new thx_geom_core_LinkedDim(function() {
+		return thx_geom_d2__$Point_Point_$Impl_$.distanceTo(c,a);
+	},function(v2) {
+		var d;
+		var this1;
+		this1 = (function($this) {
+			var $r;
+			var p1;
+			p1 = (function($this) {
+				var $r;
+				var x2 = -c.get_x();
+				var y2 = -c.get_y();
+				$r = new thx_geom_core_MutableXY(x2,y2);
+				return $r;
+			}($this));
+			var x1 = b.get_x() + p1.get_x();
+			var y1 = b.get_y() + p1.get_y();
+			$r = new thx_geom_core_MutableXY(x1,y1);
+			return $r;
+		}(this));
+		d = this1;
+		thx_geom_d2__$Vector_Vector_$Impl_$.set_length(d,v2);
+		thx_geom_d2__$Point_Point_$Impl_$.set(b,c.get_x() + d.get_x(),c.get_y() + d.get_y());
+		thx_geom_d2__$Point_Point_$Impl_$.set(a,c.get_x() - d.get_x(),c.get_y() - d.get_y());
+		return v2;
+	});
+	r = r1;
+	return new thx_geom_d2_Circle(c,r);
+};
+thx_geom_d2_Circle.create = function(x,y,r) {
+	return new thx_geom_d2_Circle(new thx_geom_core_MutableXY(x,y),r);
+};
+thx_geom_d2_Circle.prototype = {
+	center: null
+	,radius: null
+	,box: null
+	,centerLeft: null
+	,centerRight: null
+	,centerTop: null
+	,centerBottom: null
+	,bottomLeft: null
+	,topRight: null
+	,get_area: function() {
+		var this1 = this.radius;
+		return this1.get_coord() * this1.get_coord() * 3.141592653589793238;
+	}
+	,set_area: function(v) {
+		return thx_geom_d2__$Radius_Radius_$Impl_$.set_area(this.radius,v);
+	}
+	,get_circumference: function() {
+		return this.radius.get_coord() * 6.283185307179586477;
+	}
+	,set_circumference: function(v) {
+		return thx_geom_d2__$Radius_Radius_$Impl_$.set_circumference(this.radius,v);
+	}
+	,get_x: function() {
+		return this.center.get_x();
+	}
+	,get_y: function() {
+		return this.center.get_y();
+	}
+	,set_x: function(v) {
+		return this.center.set_x(v);
+	}
+	,set_y: function(v) {
+		return this.center.set_y(v);
+	}
+	,get_left: function() {
+		return this.center.get_x() - this.radius.get_coord();
+	}
+	,get_right: function() {
+		return this.center.get_x() + this.radius.get_coord();
+	}
+	,get_top: function() {
+		return this.center.get_y() - this.radius.get_coord();
+	}
+	,get_bottom: function() {
+		return this.center.get_y() + this.radius.get_coord();
+	}
+	,set_left: function(v) {
+		var v1 = v + this.radius.get_coord();
+		return this.center.set_x(v1);
+	}
+	,set_right: function(v) {
+		var v1 = v - this.radius.get_coord();
+		return this.center.set_x(v1);
+	}
+	,set_top: function(v) {
+		var v1 = v - this.radius.get_coord();
+		return this.center.set_y(v1);
+	}
+	,set_bottom: function(v) {
+		var v1 = v + this.radius.get_coord();
+		return this.center.set_y(v1);
+	}
+	,equals: function(other) {
+		return (function($this) {
+			var $r;
+			var this1 = $this.center;
+			var p = other.center;
+			$r = this1.get_x() == p.get_x() && this1.get_y() == p.get_y();
+			return $r;
+		}(this)) && this.radius.get_coord() == other.radius.get_coord();
+	}
+	,toString: function() {
+		return "Circle(" + this.center.get_x() + "," + this.center.get_y() + "," + ("Radius(" + this.radius.get_coord() + ")") + ")";
+	}
+	,get_centerLeft: function() {
+		var _g = this;
+		if(null == this.centerLeft) this.centerLeft = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x() - _g.radius.get_coord();
+			},function() {
+				return _g.center.get_y();
+			},function(v) {
+				return _g.set_left(v);
+			},function(v1) {
+				return _g.center.set_y(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.centerLeft;
+	}
+	,get_centerRight: function() {
+		var _g = this;
+		if(null == this.centerRight) this.centerRight = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x() + _g.radius.get_coord();
+			},function() {
+				return _g.center.get_y();
+			},function(v) {
+				return _g.set_right(v);
+			},function(v1) {
+				return _g.center.set_y(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.centerRight;
+	}
+	,get_centerTop: function() {
+		var _g = this;
+		if(null == this.centerTop) this.centerTop = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x();
+			},function() {
+				return _g.center.get_y() - _g.radius.get_coord();
+			},function(v) {
+				return _g.center.set_x(v);
+			},function(v1) {
+				return _g.set_top(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.centerTop;
+	}
+	,get_centerBottom: function() {
+		var _g = this;
+		if(null == this.centerBottom) this.centerBottom = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x();
+			},function() {
+				return _g.center.get_y() + _g.radius.get_coord();
+			},function(v) {
+				return _g.center.set_x(v);
+			},function(v1) {
+				return _g.set_bottom(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.centerBottom;
+	}
+	,get_bottomLeft: function() {
+		var _g = this;
+		if(null == this.bottomLeft) this.bottomLeft = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x() - _g.radius.get_coord();
+			},function() {
+				return _g.center.get_y() + _g.radius.get_coord();
+			},function(v) {
+				return _g.set_left(v);
+			},function(v1) {
+				return _g.set_bottom(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.bottomLeft;
+	}
+	,get_topRight: function() {
+		var _g = this;
+		if(null == this.topRight) this.topRight = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.center.get_x() + _g.radius.get_coord();
+			},function() {
+				return _g.center.get_y() - _g.radius.get_coord();
+			},function(v) {
+				return _g.set_right(v);
+			},function(v1) {
+				return _g.set_top(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
+		return this.topRight;
+	}
+	,__class__: thx_geom_d2_Circle
+};
+var thx_geom_d2_CubicCurveSegment = function(start,c1,c2,end) {
+	thx_geom_d2_Segment.call(this,start,end,[start,c1,c2,end]);
+	this.c1 = c1;
+	this.c2 = c2;
+};
+thx_geom_d2_CubicCurveSegment.__name__ = ["thx","geom","d2","CubicCurveSegment"];
+thx_geom_d2_CubicCurveSegment.__super__ = thx_geom_d2_Segment;
+thx_geom_d2_CubicCurveSegment.prototype = $extend(thx_geom_d2_Segment.prototype,{
+	c1: null
+	,c2: null
+	,equals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && (function($this) {
+			var $r;
+			var this1 = $this.c1;
+			var p = other.c1;
+			$r = this1.get_x() == p.get_x() && this1.get_y() == p.get_y();
+			return $r;
+		}(this)) && (function($this) {
+			var $r;
+			var this2 = $this.c2;
+			var p1 = other.c2;
+			$r = this2.get_x() == p1.get_x() && this2.get_y() == p1.get_y();
+			return $r;
+		}(this));
+	}
+	,nearEquals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && thx_geom_d2__$Point_Point_$Impl_$.nearEquals(this.c1,other.c1) && thx_geom_d2__$Point_Point_$Impl_$.nearEquals(this.c2,other.c2);
+	}
+	,toString: function() {
+		return "CubicCurveSegment(" + this.start.get_x() + "," + this.start.get_y() + "," + this.c1.get_x() + "," + this.c1.get_y() + "," + this.c2.get_x() + "," + this.c2.get_y() + "," + this.end.get_x() + "," + this.end.get_y() + ")";
+	}
+	,__class__: thx_geom_d2_CubicCurveSegment
+});
+var thx_geom_d2__$Flag_Flag_$Impl_$ = {};
+thx_geom_d2__$Flag_Flag_$Impl_$.__name__ = ["thx","geom","d2","_Flag","Flag_Impl_"];
+thx_geom_d2__$Flag_Flag_$Impl_$.fromInt = function(r) {
+	var r1 = new thx_geom_core_MutableDimBool(r != 0);
+	return r1;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.create = function(r) {
+	var r1 = new thx_geom_core_MutableDimBool(r);
+	return r1;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.linked = function(getFlag,setFlag) {
+	return new thx_geom_core_LinkedDimBool(getFlag,setFlag);
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.immutable = function(r) {
+	return new thx_geom_core_ImmutableDimBool(r);
+};
+thx_geom_d2__$Flag_Flag_$Impl_$._new = function(r) {
+	return r;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.equals = function(this1,p) {
+	return this1.get_value() == p.get_value();
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.notEquals = function(this1,p) {
+	return !(this1.get_value() == p.get_value());
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.isTrue = function(this1) {
+	return this1.get_value() == true;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.isFalse = function(this1) {
+	return this1.get_value() == false;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.clone = function(this1) {
+	return this1.clone();
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.toString = function(this1) {
+	return "Flag(" + Std.string(this1.get_value()) + ")";
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.toInt = function(this1) {
+	if(this1.get_value()) return 1; else return 0;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.toBool = function(this1) {
+	return this1.get_value();
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.get_int = function(this1) {
+	if(this1.get_value()) return 1; else return 0;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.set_int = function(this1,v) {
+	this1.set_value(v != 0);
+	return v;
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.get_value = function(this1) {
+	return this1.get_value();
+};
+thx_geom_d2__$Flag_Flag_$Impl_$.set_value = function(this1,v) {
+	return this1.set_value(v);
+};
+var thx_geom_d2_LineSegment = function(start,end) {
+	thx_geom_d2_Segment.call(this,start,end,[start,end]);
+};
+thx_geom_d2_LineSegment.__name__ = ["thx","geom","d2","LineSegment"];
+thx_geom_d2_LineSegment.__super__ = thx_geom_d2_Segment;
+thx_geom_d2_LineSegment.prototype = $extend(thx_geom_d2_Segment.prototype,{
+	toString: function() {
+		return "LineSegment(" + this.start.get_x() + "," + this.start.get_y() + "," + this.end.get_x() + "," + this.end.get_y() + ")";
+	}
+	,__class__: thx_geom_d2_LineSegment
+});
+var thx_geom_d2_Path = function(list) {
+	var _g = this;
+	if(null == list) this.segments = []; else this.segments = list;
+	this.box = thx_geom_d2_Rect.fromRects({ iterator : function() {
+		var _this = _g.segments.map(function(_) {
+			return _.box;
+		});
+		return HxOverrides.iter(_this);
+	}});
+};
+thx_geom_d2_Path.__name__ = ["thx","geom","d2","Path"];
+thx_geom_d2_Path.__interfaces__ = [thx_geom_d2_IShape];
+thx_geom_d2_Path.fromSVGPath = function(d) {
+	return new thx_geom_d2_Path(thx_geom_d2_svg_Svg.parsePath(d));
+};
+thx_geom_d2_Path.r = function(v) {
+	return thx_Floats.roundTo(v,9);
+};
+thx_geom_d2_Path.prototype = {
+	box: null
+	,segments: null
+	,toSVGPath: function() {
+		var buf = [];
+		var end;
+		var x = NaN;
+		var y = NaN;
+		end = new thx_geom_core_MutableXY(x,y);
+		var startingPoint = end;
+		var _g = 0;
+		var _g1 = this.segments;
+		while(_g < _g1.length) {
+			var segment = _g1[_g];
+			++_g;
+			if(!(function($this) {
+				var $r;
+				var p = segment.start;
+				$r = end.get_x() == p.get_x() && end.get_y() == p.get_y();
+				return $r;
+			}(this))) {
+				buf.push("M " + thx_geom_d2_Path.r(segment.start.get_x()) + " " + thx_geom_d2_Path.r(segment.start.get_y()));
+				startingPoint = segment.start;
+			}
+			var _g2;
+			if(segment == null) _g2 = null; else _g2 = js_Boot.getClass(segment);
+			if(_g2 != null) switch(_g2) {
+			case thx_geom_d2_LineSegment:
+				buf.push("L " + thx_geom_d2_Path.r(segment.end.get_x()) + " " + thx_geom_d2_Path.r(segment.end.get_y()));
+				break;
+			case thx_geom_d2_QuadraticCurveSegment:
+				var s = segment;
+				buf.push("Q " + thx_geom_d2_Path.r(s.c1.get_x()) + " " + thx_geom_d2_Path.r(s.c1.get_y()) + " " + thx_geom_d2_Path.r(s.end.get_x()) + " " + thx_geom_d2_Path.r(s.end.get_y()));
+				break;
+			case thx_geom_d2_CubicCurveSegment:
+				var s1 = segment;
+				buf.push("C " + thx_geom_d2_Path.r(s1.c1.get_x()) + " " + thx_geom_d2_Path.r(s1.c1.get_y()) + " " + thx_geom_d2_Path.r(s1.c2.get_x()) + " " + thx_geom_d2_Path.r(s1.c2.get_y()) + " " + thx_geom_d2_Path.r(s1.end.get_x()) + " " + thx_geom_d2_Path.r(s1.end.get_y()));
+				break;
+			case thx_geom_d2_ArcSegment:
+				var s2 = segment;
+				buf.push("A " + thx_geom_d2_Path.r(s2.radius.get_x()) + " " + thx_geom_d2_Path.r(s2.radius.get_y()) + " " + thx_geom_d2_Path.r(s2.xAxisRotate.get_coord() * 57.29577951308232088) + " " + (s2.largeArcFlag.get_value()?1:0) + " " + (s2.sweepFlag.get_value()?1:0) + " " + thx_geom_d2_Path.r(s2.end.get_x()) + " " + thx_geom_d2_Path.r(s2.end.get_y()));
+				break;
+			}
+			if((function($this) {
+				var $r;
+				var this1 = segment.end;
+				$r = this1.get_x() == startingPoint.get_x() && this1.get_y() == startingPoint.get_y();
+				return $r;
+			}(this))) buf.push("Z");
+			end = segment.end;
+		}
+		return buf.join(" ");
+	}
+	,toString: function() {
+		return "Path(segments=" + this.segments.length + ")";
+	}
+	,__class__: thx_geom_d2_Path
+};
 var thx_geom_d2__$Point_Point_$Impl_$ = {};
 thx_geom_d2__$Point_Point_$Impl_$.__name__ = ["thx","geom","d2","_Point","Point_Impl_"];
 thx_geom_d2__$Point_Point_$Impl_$.linkedMin = function(points) {
-	return new thx_geom_core_LinkedXY(function() {
-		var x = Infinity;
-		var $it0 = $iterator(points)();
-		while( $it0.hasNext() ) {
-			var p = $it0.next();
-			if(p.get_x() < x) x = p.get_x();
-		}
-		return x;
-	},function() {
-		var y = Infinity;
-		var $it1 = $iterator(points)();
-		while( $it1.hasNext() ) {
-			var p1 = $it1.next();
-			if(p1.get_y() < y) y = p1.get_y();
-		}
-		return y;
-	},function(_) {
-		throw new js__$Boot_HaxeError("cannot set X for linkedMin point");
-	},function(_1) {
-		throw new js__$Boot_HaxeError("cannot set Y for linkedMin point");
-	});
+	return (function($this) {
+		var $r;
+		var p2 = new thx_geom_core_LinkedXY(function() {
+			var x = Infinity;
+			var $it0 = $iterator(points)();
+			while( $it0.hasNext() ) {
+				var p = $it0.next();
+				if(p.get_x() < x) x = p.get_x();
+			}
+			return x;
+		},function() {
+			var y = Infinity;
+			var $it1 = $iterator(points)();
+			while( $it1.hasNext() ) {
+				var p1 = $it1.next();
+				if(p1.get_y() < y) y = p1.get_y();
+			}
+			return y;
+		},function(_) {
+			throw new js__$Boot_HaxeError("cannot set X for linkedMin point");
+		},function(_1) {
+			throw new js__$Boot_HaxeError("cannot set Y for linkedMin point");
+		});
+		$r = p2;
+		return $r;
+	}(this));
 };
 thx_geom_d2__$Point_Point_$Impl_$.linkedMax = function(points) {
-	return new thx_geom_core_LinkedXY(function() {
-		var x = -Infinity;
-		var $it0 = $iterator(points)();
-		while( $it0.hasNext() ) {
-			var p = $it0.next();
-			if(p.get_x() > x) x = p.get_x();
-		}
-		return x;
-	},function() {
-		var y = -Infinity;
-		var $it1 = $iterator(points)();
-		while( $it1.hasNext() ) {
-			var p1 = $it1.next();
-			if(p1.get_y() > y) y = p1.get_y();
-		}
-		return y;
-	},function(_) {
-		throw new js__$Boot_HaxeError("cannot set X for linkedMax point");
-	},function(_1) {
-		throw new js__$Boot_HaxeError("cannot set Y for linkedMax point");
-	});
+	return (function($this) {
+		var $r;
+		var p2 = new thx_geom_core_LinkedXY(function() {
+			var x = -Infinity;
+			var $it0 = $iterator(points)();
+			while( $it0.hasNext() ) {
+				var p = $it0.next();
+				if(p.get_x() > x) x = p.get_x();
+			}
+			return x;
+		},function() {
+			var y = -Infinity;
+			var $it1 = $iterator(points)();
+			while( $it1.hasNext() ) {
+				var p1 = $it1.next();
+				if(p1.get_y() > y) y = p1.get_y();
+			}
+			return y;
+		},function(_) {
+			throw new js__$Boot_HaxeError("cannot set X for linkedMax point");
+		},function(_1) {
+			throw new js__$Boot_HaxeError("cannot set Y for linkedMax point");
+		});
+		$r = p2;
+		return $r;
+	}(this));
 };
 thx_geom_d2__$Point_Point_$Impl_$.fromFloats = function(arr) {
 	thx_ArrayFloats.resize(arr,2,0);
@@ -2607,8 +3763,11 @@ thx_geom_d2__$Point_Point_$Impl_$.fromAngle = function(angle) {
 thx_geom_d2__$Point_Point_$Impl_$.create = function(x,y) {
 	return new thx_geom_core_MutableXY(x,y);
 };
-thx_geom_d2__$Point_Point_$Impl_$.linked = function(getX,getY,setX,setY) {
-	return new thx_geom_core_LinkedXY(getX,getY,setX,setY);
+thx_geom_d2__$Point_Point_$Impl_$.linked = function(getX,getY,setX,setY,x,y) {
+	var p = new thx_geom_core_LinkedXY(getX,getY,setX,setY);
+	if(null != x) p.set_x(x);
+	if(null != y) p.set_y(y);
+	return p;
 };
 thx_geom_d2__$Point_Point_$Impl_$.immutable = function(x,y) {
 	return new thx_geom_core_ImmutableXY(x,y);
@@ -2918,6 +4077,97 @@ thx_geom_d2__$Point_Point_$Impl_$.set_x = function(this1,v) {
 thx_geom_d2__$Point_Point_$Impl_$.set_y = function(this1,v) {
 	return this1.set_y(v);
 };
+var thx_geom_d2_QuadraticCurveSegment = function(start,c1,end) {
+	thx_geom_d2_Segment.call(this,start,end,[start,c1,end]);
+	this.c1 = c1;
+};
+thx_geom_d2_QuadraticCurveSegment.__name__ = ["thx","geom","d2","QuadraticCurveSegment"];
+thx_geom_d2_QuadraticCurveSegment.__super__ = thx_geom_d2_Segment;
+thx_geom_d2_QuadraticCurveSegment.prototype = $extend(thx_geom_d2_Segment.prototype,{
+	c1: null
+	,equals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && (function($this) {
+			var $r;
+			var this1 = $this.c1;
+			var p = other.c1;
+			$r = this1.get_x() == p.get_x() && this1.get_y() == p.get_y();
+			return $r;
+		}(this));
+	}
+	,nearEquals: function(other) {
+		return thx_geom_d2_Segment.prototype.equals.call(this,other) && thx_geom_d2__$Point_Point_$Impl_$.nearEquals(this.c1,other.c1);
+	}
+	,toString: function() {
+		return "QuadraticCurveSegment(" + this.start.get_x() + "," + this.start.get_y() + "," + this.c1.get_x() + "," + this.c1.get_y() + "," + this.end.get_x() + "," + this.end.get_y() + ")";
+	}
+	,__class__: thx_geom_d2_QuadraticCurveSegment
+});
+var thx_geom_d2__$Radius_Radius_$Impl_$ = {};
+thx_geom_d2__$Radius_Radius_$Impl_$.__name__ = ["thx","geom","d2","_Radius","Radius_Impl_"];
+thx_geom_d2__$Radius_Radius_$Impl_$.fromFloat = function(r) {
+	return new thx_geom_core_MutableDim(Math.abs(r));
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.create = function(r) {
+	return new thx_geom_core_MutableDim(Math.abs(r));
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.linked = function(getRadius,setRadius,radius) {
+	var r = new thx_geom_core_LinkedDim(getRadius,setRadius);
+	if(null != radius) r.set_coord(radius);
+	return r;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.immutable = function(r) {
+	return new thx_geom_core_ImmutableDim(r);
+};
+thx_geom_d2__$Radius_Radius_$Impl_$._new = function(r) {
+	return r;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.equals = function(this1,p) {
+	return this1.get_coord() == p.get_coord();
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.notEquals = function(this1,p) {
+	return !(this1.get_coord() == p.get_coord());
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.nearEquals = function(this1,p) {
+	return thx_Floats.nearEquals(this1.get_coord(),p.get_coord());
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.notNearEquals = function(this1,p) {
+	return !thx_geom_d2__$Radius_Radius_$Impl_$.nearEquals(this1,p);
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.isZero = function(this1) {
+	return this1.get_coord() == 0;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.isNearZero = function(this1) {
+	return thx_Floats.nearZero(this1.get_coord());
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.clone = function(this1) {
+	return this1.clone();
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.toString = function(this1) {
+	return "Radius(" + this1.get_coord() + ")";
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.toFloat = function(this1) {
+	return this1.get_coord();
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.get_coord = function(this1) {
+	return this1.get_coord();
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.set_coord = function(this1,v) {
+	return this1.set_coord(v);
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.get_area = function(this1) {
+	return this1.get_coord() * this1.get_coord() * 3.141592653589793238;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.set_area = function(this1,v) {
+	this1.set_coord(Math.sqrt(v / 3.141592653589793238));
+	return v;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.get_circumference = function(this1) {
+	return this1.get_coord() * 6.283185307179586477;
+};
+thx_geom_d2__$Radius_Radius_$Impl_$.set_circumference = function(this1,v) {
+	this1.set_coord(v / 6.283185307179586477);
+	return v;
+};
 var thx_geom_d2_Rect = function(position,size) {
 	this.position = position;
 	this.size = size;
@@ -2959,119 +4209,164 @@ thx_geom_d2_Rect.prototype = {
 	,corners: null
 	,get_center: function() {
 		var _g = this;
-		if(null == this.center) this.center = new thx_geom_core_LinkedXY(function() {
-			return _g.position.get_x() + _g.size.get_x() / 2;
-		},function() {
-			return _g.position.get_y() + _g.size.get_y() / 2;
-		},function(v) {
-			return _g.set_x(v - _g.size.get_x() / 2);
-		},function(v1) {
-			return _g.set_y(v1 - _g.size.get_y() / 2);
-		});
+		if(null == this.center) this.center = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.position.get_x() + _g.size.get_x() / 2;
+			},function() {
+				return _g.position.get_y() + _g.size.get_y() / 2;
+			},function(v) {
+				return _g.set_x(v - _g.size.get_x() / 2);
+			},function(v1) {
+				return _g.set_y(v1 - _g.size.get_y() / 2);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.center;
 	}
 	,get_centerLeft: function() {
 		var _g = this;
-		if(null == this.centerLeft) this.centerLeft = new thx_geom_core_LinkedXY(function() {
-			return _g.get_left();
-		},function() {
-			return _g.position.get_y() + _g.size.get_y() / 2;
-		},function(v) {
-			return _g.set_left(v);
-		},function(v1) {
-			return _g.set_y(v1 - _g.size.get_y() / 2);
-		});
+		if(null == this.centerLeft) this.centerLeft = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_left();
+			},function() {
+				return _g.position.get_y() + _g.size.get_y() / 2;
+			},function(v) {
+				return _g.set_left(v);
+			},function(v1) {
+				return _g.set_y(v1 - _g.size.get_y() / 2);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.centerLeft;
 	}
 	,get_centerRight: function() {
 		var _g = this;
-		if(null == this.centerRight) this.centerRight = new thx_geom_core_LinkedXY(function() {
-			return _g.get_right();
-		},function() {
-			return _g.position.get_y() + _g.size.get_y() / 2;
-		},function(v) {
-			return _g.set_right(v);
-		},function(v1) {
-			return _g.set_y(v1 - _g.size.get_y() / 2);
-		});
+		if(null == this.centerRight) this.centerRight = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_right();
+			},function() {
+				return _g.position.get_y() + _g.size.get_y() / 2;
+			},function(v) {
+				return _g.set_right(v);
+			},function(v1) {
+				return _g.set_y(v1 - _g.size.get_y() / 2);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.centerRight;
 	}
 	,get_centerTop: function() {
 		var _g = this;
-		if(null == this.centerTop) this.centerTop = new thx_geom_core_LinkedXY(function() {
-			return _g.position.get_x() + _g.size.get_x() / 2;
-		},function() {
-			return _g.get_top();
-		},function(v) {
-			return _g.set_x(v - _g.size.get_x() / 2);
-		},function(v1) {
-			return _g.set_top(v1);
-		});
+		if(null == this.centerTop) this.centerTop = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.position.get_x() + _g.size.get_x() / 2;
+			},function() {
+				return _g.get_top();
+			},function(v) {
+				return _g.set_x(v - _g.size.get_x() / 2);
+			},function(v1) {
+				return _g.set_top(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.centerTop;
 	}
 	,get_centerBottom: function() {
 		var _g = this;
-		if(null == this.centerBottom) this.centerBottom = new thx_geom_core_LinkedXY(function() {
-			return _g.position.get_x() + _g.size.get_x() / 2;
-		},function() {
-			return _g.get_bottom();
-		},function(v) {
-			return _g.set_x(v - _g.size.get_x() / 2);
-		},function(v1) {
-			return _g.set_bottom(v1);
-		});
+		if(null == this.centerBottom) this.centerBottom = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.position.get_x() + _g.size.get_x() / 2;
+			},function() {
+				return _g.get_bottom();
+			},function(v) {
+				return _g.set_x(v - _g.size.get_x() / 2);
+			},function(v1) {
+				return _g.set_bottom(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.centerBottom;
 	}
 	,get_topLeft: function() {
 		var _g = this;
-		if(null == this.topLeft) this.topLeft = new thx_geom_core_LinkedXY(function() {
-			return _g.get_left();
-		},function() {
-			return _g.get_top();
-		},function(v) {
-			return _g.set_left(v);
-		},function(v1) {
-			return _g.set_top(v1);
-		});
+		if(null == this.topLeft) this.topLeft = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_left();
+			},function() {
+				return _g.get_top();
+			},function(v) {
+				return _g.set_left(v);
+			},function(v1) {
+				return _g.set_top(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.topLeft;
 	}
 	,get_topRight: function() {
 		var _g = this;
-		if(null == this.topRight) this.topRight = new thx_geom_core_LinkedXY(function() {
-			return _g.get_right();
-		},function() {
-			return _g.get_top();
-		},function(v) {
-			return _g.set_right(v);
-		},function(v1) {
-			return _g.set_top(v1);
-		});
+		if(null == this.topRight) this.topRight = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_right();
+			},function() {
+				return _g.get_top();
+			},function(v) {
+				return _g.set_right(v);
+			},function(v1) {
+				return _g.set_top(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.topRight;
 	}
 	,get_bottomLeft: function() {
 		var _g = this;
-		if(null == this.bottomLeft) this.bottomLeft = new thx_geom_core_LinkedXY(function() {
-			return _g.get_left();
-		},function() {
-			return _g.get_bottom();
-		},function(v) {
-			return _g.set_left(v);
-		},function(v1) {
-			return _g.set_bottom(v1);
-		});
+		if(null == this.bottomLeft) this.bottomLeft = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_left();
+			},function() {
+				return _g.get_bottom();
+			},function(v) {
+				return _g.set_left(v);
+			},function(v1) {
+				return _g.set_bottom(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.bottomLeft;
 	}
 	,get_bottomRight: function() {
 		var _g = this;
-		if(null == this.bottomRight) this.bottomRight = new thx_geom_core_LinkedXY(function() {
-			return _g.get_right();
-		},function() {
-			return _g.get_bottom();
-		},function(v) {
-			return _g.set_right(v);
-		},function(v1) {
-			return _g.set_bottom(v1);
-		});
+		if(null == this.bottomRight) this.bottomRight = (function($this) {
+			var $r;
+			var p = new thx_geom_core_LinkedXY(function() {
+				return _g.get_right();
+			},function() {
+				return _g.get_bottom();
+			},function(v) {
+				return _g.set_right(v);
+			},function(v1) {
+				return _g.set_bottom(v1);
+			});
+			$r = p;
+			return $r;
+		}(this));
 		return this.bottomRight;
 	}
 	,get_area: function() {
@@ -3166,8 +4461,11 @@ thx_geom_d2__$Size_Size_$Impl_$.fromObject = function(o) {
 thx_geom_d2__$Size_Size_$Impl_$.create = function(width,height) {
 	return new thx_geom_core_MutableXY(width,height);
 };
-thx_geom_d2__$Size_Size_$Impl_$.linked = function(getWidth,getHeight,setWidth,setHeight) {
-	return new thx_geom_core_LinkedXY(getWidth,getHeight,setWidth,setHeight);
+thx_geom_d2__$Size_Size_$Impl_$.linked = function(getWidth,getHeight,setWidth,setHeight,width,height) {
+	var size = new thx_geom_core_LinkedXY(getWidth,getHeight,setWidth,setHeight);
+	if(null != width) size.set_x(width);
+	if(null != height) size.set_y(height);
+	return size;
 };
 thx_geom_d2__$Size_Size_$Impl_$.immutable = function(width,height) {
 	return new thx_geom_core_ImmutableXY(width,height);
@@ -3571,6 +4869,303 @@ thx_geom_d2__$Vector_Vector_$Impl_$.get_magnitude = function(this1) {
 thx_geom_d2__$Vector_Vector_$Impl_$.set_magnitude = function(this1,m) {
 	thx_geom_d2__$Vector_Vector_$Impl_$.set_length(this1,Math.sqrt(m));
 	return m;
+};
+var thx_geom_d2_svg_Svg = function() { };
+thx_geom_d2_svg_Svg.__name__ = ["thx","geom","d2","svg","Svg"];
+thx_geom_d2_svg_Svg.parsePath = function(d) {
+	var list = [];
+	var capture = function(qt) {
+		var arr = [];
+		var b = "";
+		var c;
+		var _g = 0;
+		while(_g < qt) {
+			var i = _g++;
+			while(d.length > 0 && thx_geom_d2_svg_Svg.isFiller(d)) d = d.substring(1);
+			while(d.length > 0 && thx_geom_d2_svg_Svg.isNumerical(d)) {
+				b += d.substring(0,1);
+				d = d.substring(1);
+			}
+			arr.push(parseFloat(b));
+			b = "";
+		}
+		return arr;
+	};
+	var captureOne = function() {
+		return capture(1)[0];
+	};
+	var capturePoints = function(qt1) {
+		var c1 = capture(qt1 * 2);
+		return thx_Arrays.splitBy(c1,2).map(function(_) {
+			return new thx_geom_core_MutableXY(_[0],_[1]);
+		});
+	};
+	var capturePoint = function() {
+		return capturePoints(1)[0];
+	};
+	var beginShape = 0;
+	var prev = "L";
+	var last = new thx_geom_core_MutableXY(0,0);
+	var smooth = null;
+	while(d.length > 0) {
+		while(thx_geom_d2_svg_Svg.isFiller(d)) d = d.substring(1);
+		var c2 = d.substring(0,1);
+		d = d.substring(1);
+		var v = c2;
+		var v1 = c2;
+		switch(c2) {
+		case "M":
+			beginShape = list.length;
+			prev = "L";
+			smooth = null;
+			var p = capturePoint();
+			if(!(last.get_x() == p.get_x() && last.get_y() == p.get_y())) last = p;
+			break;
+		case "m":
+			beginShape = list.length;
+			prev = "l";
+			smooth = null;
+			var p1 = capturePoint();
+			last = (function($this) {
+				var $r;
+				var x = last.get_x() + p1.get_x();
+				var y = last.get_y() + p1.get_y();
+				$r = new thx_geom_core_MutableXY(x,y);
+				return $r;
+			}(this));
+			break;
+		case "L":
+			prev = "L";
+			smooth = null;
+			var p2 = capturePoint();
+			list.push(new thx_geom_d2_LineSegment(last,last = p2));
+			break;
+		case "l":
+			prev = "l";
+			smooth = null;
+			var p3 = capturePoint();
+			list.push(new thx_geom_d2_LineSegment(last,last = (function($this) {
+				var $r;
+				var x1 = last.get_x() + p3.get_x();
+				var y1 = last.get_y() + p3.get_y();
+				$r = new thx_geom_core_MutableXY(x1,y1);
+				return $r;
+			}(this))));
+			break;
+		case "Q":
+			prev = "Q";
+			var ps = capturePoints(2);
+			list.push(new thx_geom_d2_QuadraticCurveSegment(last,smooth = ps[0],last = ps[1]));
+			break;
+		case "q":
+			prev = "q";
+			var ps1 = capturePoints(2);
+			list.push(new thx_geom_d2_QuadraticCurveSegment(last,(function($this) {
+				var $r;
+				var p4 = ps1[0];
+				var x2 = last.get_x() + p4.get_x();
+				var y2 = last.get_y() + p4.get_y();
+				$r = smooth = new thx_geom_core_MutableXY(x2,y2);
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var p5 = ps1[1];
+				var x3 = last.get_x() + p5.get_x();
+				var y3 = last.get_y() + p5.get_y();
+				$r = last = new thx_geom_core_MutableXY(x3,y3);
+				return $r;
+			}(this))));
+			break;
+		case "C":
+			prev = "C";
+			var ps2 = capturePoints(3);
+			list.push(new thx_geom_d2_CubicCurveSegment(last,ps2[0],smooth = ps2[1],last = ps2[2]));
+			break;
+		case "c":
+			prev = "c";
+			var ps3 = capturePoints(3);
+			list.push(new thx_geom_d2_CubicCurveSegment(last,(function($this) {
+				var $r;
+				var p6 = ps3[0];
+				var x4 = last.get_x() + p6.get_x();
+				var y4 = last.get_y() + p6.get_y();
+				$r = new thx_geom_core_MutableXY(x4,y4);
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var p7 = ps3[1];
+				var x5 = last.get_x() + p7.get_x();
+				var y5 = last.get_y() + p7.get_y();
+				$r = smooth = new thx_geom_core_MutableXY(x5,y5);
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var p8 = ps3[2];
+				var x6 = last.get_x() + p8.get_x();
+				var y6 = last.get_y() + p8.get_y();
+				$r = last = new thx_geom_core_MutableXY(x6,y6);
+				return $r;
+			}(this))));
+			break;
+		case "H":
+			prev = "H";
+			smooth = null;
+			var x7 = captureOne();
+			var p9 = last.clone();
+			p9.set_x(x7);
+			list.push(new thx_geom_d2_LineSegment(last,last = p9));
+			break;
+		case "h":
+			prev = "h";
+			smooth = null;
+			var x8 = captureOne();
+			var p10 = last.clone();
+			var v2 = p10.get_x() + x8;
+			p10.set_x(v2);
+			list.push(new thx_geom_d2_LineSegment(last,last = p10));
+			break;
+		case "V":
+			smooth = null;
+			prev = "V";
+			var y7 = captureOne();
+			var p11 = last.clone();
+			p11.set_y(y7);
+			list.push(new thx_geom_d2_LineSegment(last,last = p11));
+			break;
+		case "v":
+			smooth = null;
+			prev = "v";
+			var y8 = captureOne();
+			var p12 = last.clone();
+			var v3 = p12.get_y() + y8;
+			p12.set_y(v3);
+			list.push(new thx_geom_d2_LineSegment(last,last = p12));
+			break;
+		case "S":
+			prev = "S";
+			var ps4 = capturePoints(2);
+			if(null != smooth) smooth = thx_geom_d2__$Point_Point_$Impl_$.reflection(smooth,last); else smooth = ps4[0];
+			list.push(new thx_geom_d2_CubicCurveSegment(last,smooth,smooth = ps4[0],last = ps4[1]));
+			break;
+		case "s":
+			smooth = null;
+			var ps5 = capturePoints(2);
+			if(null != smooth) smooth = thx_geom_d2__$Point_Point_$Impl_$.reflection(smooth,last); else {
+				var p13 = ps5[0];
+				var x9 = last.get_x() + p13.get_x();
+				var y9 = last.get_y() + p13.get_y();
+				smooth = new thx_geom_core_MutableXY(x9,y9);
+			}
+			list.push(new thx_geom_d2_CubicCurveSegment(last,smooth,(function($this) {
+				var $r;
+				var p14 = ps5[0];
+				var x10 = last.get_x() + p14.get_x();
+				var y10 = last.get_y() + p14.get_y();
+				$r = smooth = new thx_geom_core_MutableXY(x10,y10);
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var p15 = ps5[1];
+				var x11 = last.get_x() + p15.get_x();
+				var y11 = last.get_y() + p15.get_y();
+				$r = last = new thx_geom_core_MutableXY(x11,y11);
+				return $r;
+			}(this))));
+			break;
+		case "T":
+			smooth = null;
+			prev = "T";
+			var p16 = capturePoint();
+			if(null != smooth) smooth = thx_geom_d2__$Point_Point_$Impl_$.reflection(smooth,last); else smooth = last;
+			list.push(new thx_geom_d2_QuadraticCurveSegment(last,smooth,last = p16));
+			break;
+		case "t":
+			smooth = null;
+			prev = "t";
+			var p17 = capturePoint();
+			if(null != smooth) smooth = thx_geom_d2__$Point_Point_$Impl_$.reflection(smooth,last); else smooth = last;
+			list.push(new thx_geom_d2_QuadraticCurveSegment(last,smooth,last = (function($this) {
+				var $r;
+				var x12 = last.get_x() + p17.get_x();
+				var y12 = last.get_y() + p17.get_y();
+				$r = new thx_geom_core_MutableXY(x12,y12);
+				return $r;
+			}(this))));
+			break;
+		case "A":
+			smooth = null;
+			prev = "A";
+			var a = capture(7);
+			list.push(new thx_geom_d2_ArcSegment(last,new thx_geom_core_MutableXY(a[0],a[1]),(function($this) {
+				var $r;
+				var r = new thx_geom_core_MutableDimBool(a[3] != 0);
+				$r = r;
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var r1 = new thx_geom_core_MutableDimBool(a[4] != 0);
+				$r = r1;
+				return $r;
+			}(this)),new thx_geom_core_MutableDim(a[2]),last = new thx_geom_core_MutableXY(a[5],a[6])));
+			break;
+		case "a":
+			smooth = null;
+			prev = "a";
+			var a1 = capture(7);
+			list.push(new thx_geom_d2_ArcSegment(last,new thx_geom_core_MutableXY(a1[0],a1[1]),(function($this) {
+				var $r;
+				var r2 = new thx_geom_core_MutableDimBool(a1[3] != 0);
+				$r = r2;
+				return $r;
+			}(this)),(function($this) {
+				var $r;
+				var r3 = new thx_geom_core_MutableDimBool(a1[4] != 0);
+				$r = r3;
+				return $r;
+			}(this)),new thx_geom_core_MutableDim(a1[2]),(function($this) {
+				var $r;
+				var p18 = new thx_geom_core_MutableXY(a1[5],a1[6]);
+				var x13 = last.get_x() + p18.get_x();
+				var y13 = last.get_y() + p18.get_y();
+				$r = last = new thx_geom_core_MutableXY(x13,y13);
+				return $r;
+			}(this))));
+			break;
+		case "z":case "Z":
+			smooth = null;
+			var first = list[beginShape];
+			if(null != first && !(function($this) {
+				var $r;
+				var this1 = first.start;
+				$r = this1.get_x() == last.get_x() && this1.get_y() == last.get_y();
+				return $r;
+			}(this))) list.push(new thx_geom_d2_LineSegment(last,first.start));
+			break;
+		case ".":
+			d = "0." + d;
+			break;
+		case "-":case "0":case "1":case "2":case "3":case "4":case "5":case "6":case "7":case "8":case "9":case "e":
+			d = prev + c2 + d;
+			break;
+		default:
+			if(thx_geom_d2_svg_Svg.isFiller(v) || v == "") {
+			} else throw new js__$Boot_HaxeError("invalid command \"" + v1 + "\" in " + d);
+		}
+	}
+	return list;
+};
+thx_geom_d2_svg_Svg.isFiller = function(s) {
+	var c = s.substring(0,1);
+	return c == " " || c == "\n" || c == "," || c == "\t";
+};
+thx_geom_d2_svg_Svg.isNumerical = function(s) {
+	var c = s.substring(0,1);
+	switch(c) {
+	case "-":case "0":case "1":case "2":case "3":case "4":case "5":case "6":case "7":case "8":case "9":case "e":case ".":
+		return true;
+	default:
+		return false;
+	}
 };
 var thx_math_Const = function() { };
 thx_math_Const.__name__ = ["thx","math","Const"];
