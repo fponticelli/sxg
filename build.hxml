@@ -3,4 +3,5 @@
 -cp demo
 -lib thx.core
 -lib thx.geom
+-lib thx.math
 -main Demo
