@@ -1,37 +1,25 @@
 package sxg;
 
 import sxg.core.*;
+import thx.geom.d2.Size;
 
-class Svg<T> {
+class Svg<T> extends Element<T> {
   public inline static var SVG   = 'http://www.w3.org/2000/svg';
   public inline static var XMLNS = 'http://www.w3.org/2000/xmlns/';
   public inline static var XLINK = 'http://www.w3.org/1999/xlink';
 
-  public static function xml() : Svg<Xml>
-    return new Svg(new XmlDocument(), "svg");
+  public static function xml(width : Float, height : Float) : Svg<Xml>
+    return new Svg(new XmlDocument(), width, height);
 
   #if js
-  public static function dom(?document : js.html.Document) : Svg<js.html.Element>
-    return new Svg(new DomDocument(document), "svg");
+  public static function dom(width : Float, height : Float, ?document : js.html.Document) : Svg<js.html.Element>
+    return new Svg(new DomDocument(document), width, height);
   #end
 
-  var doc : Document<T>;
-  var el : T;
-  function new(doc : Document<T>, name : String) {
-    this.doc = doc;
-    this.el = createElement(name);
-  }
+  public var size(default, null) : Size;
 
-  public function rect() {
-    var r = new Rect(doc);
-    //el.appendChild(r.el);
-    return r;
+  function new(doc : Document<T>, width : Float, height : Float) {
+    super(doc, "svg");
+    this.size = Geom.linkedSize(doc, el, width, height);
   }
-
-  public function toString() {
-    return doc.elementToString(el);
-  }
-
-  inline function createElement(name : String)
-    return doc.createElementNS(SVG, name);
 }

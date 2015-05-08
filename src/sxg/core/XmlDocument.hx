@@ -30,9 +30,14 @@ class XmlDocument implements Document<Xml> {
     return format(node, 0, { ns : null });
   }
 
-  public function appendChild(parent : Xml, child : Xml) {
-    return parent.addChild(child);
-  }
+  public function appendChild(parent : Xml, child : Xml)
+    parent.addChild(child);
+
+  public function removeChild(parent : Xml, child : Xml)
+    parent.removeChild(child);
+
+  public function setAttribute(el : Xml, name : String, value : String)
+    el.set(name, value);
 
   static function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),
