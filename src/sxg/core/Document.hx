@@ -1,6 +1,7 @@
 package sxg.core;
 
-interface Document {
-  function createElementNS(ns : String, name : String) : Element;
-  function elementToString(el : Element, ?pretty : Bool = false) : String;
+interface Document<T> {
+  function createElementNS(ns : String, name : String) : T;
+  function elementToString(el : T, ?pretty : Bool = false) : String;
+  function appendChild(parent : T, child : T) : Void;
 }

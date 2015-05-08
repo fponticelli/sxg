@@ -5,7 +5,7 @@ using thx.Nulls;
 using thx.Strings;
 using thx.Iterators;
 
-class XmlDocument implements Document {
+class XmlDocument implements Document<Xml> {
   var xml : Xml;
   static var prefixes = [ SVG => "svg", XLINK => "xmlink", XMLNS => "xmlns" ];
 
@@ -13,10 +13,10 @@ class XmlDocument implements Document {
     this.xml = null == xml ? Xml.createDocument() : xml;
   }
 
-  public function createElementNS(ns : String, name : String) : Element {
+  public function createElementNS(ns : String, name : String) : Xml {
     var xml = Xml.createElement(name);
     xml.set("xmlns", ns);
-    return xml;
+    return cast xml;
   }
 
   inline function p(ns : String) {
@@ -25,9 +25,13 @@ class XmlDocument implements Document {
     return pr;
   }
 
-  public function elementToString(el : Element, ?pretty = false) : String {
+  public function elementToString(el : Xml, ?pretty = false) : String {
     var node : Xml = cast el;
     return format(node, 0, { ns : null });
+  }
+
+  public function appendChild(parent : Xml, child : Xml) {
+    return parent.addChild(child);
   }
 
   static function format(node : Xml, ind : Int, def : { ns : String }) {

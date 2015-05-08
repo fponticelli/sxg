@@ -11,8 +11,13 @@ Demo.__name__ = ["Demo"];
 Demo.main = function() {
 	var xml = sxg_Svg.xml();
 	var dom = sxg_Svg.dom();
+	Demo.render(xml);
+	Demo.render(dom);
 	console.log(xml.toString());
 	console.log(dom.toString());
+};
+Demo.render = function(svg) {
+	var r = svg.rect();
 };
 var EReg = function(r,opt) {
 	opt = opt.split("u").join("");
@@ -302,6 +307,7 @@ Xml.createDocument = function() {
 Xml.prototype = {
 	nodeType: null
 	,nodeName: null
+	,parent: null
 	,children: null
 	,attributeMap: null
 	,get: function(att) {
@@ -329,6 +335,20 @@ Xml.prototype = {
 		}
 		ret = _g;
 		return HxOverrides.iter(ret);
+	}
+	,addChild: function(x) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + this.nodeType);
+		if(x.parent != null) x.parent.removeChild(x);
+		this.children.push(x);
+		x.parent = this;
+	}
+	,removeChild: function(x) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + this.nodeType);
+		if(HxOverrides.remove(this.children,x)) {
+			x.parent = null;
+			return true;
+		}
+		return false;
 	}
 	,__class__: Xml
 };
@@ -486,33 +506,46 @@ js_Boot.__nativeClassName = function(o) {
 js_Boot.__resolveNativeClass = function(name) {
 	if(typeof window != "undefined") return window[name]; else return global[name];
 };
-var sxg_Svg = function(doc) {
+var sxg_Svg = function(doc,name) {
 	this.doc = doc;
-	this.root = this.doc.createElementNS("http://www.w3.org/2000/svg","svg");
+	this.el = this.doc.createElementNS("http://www.w3.org/2000/svg",name);
 };
 sxg_Svg.__name__ = ["sxg","Svg"];
 sxg_Svg.xml = function() {
-	return new sxg_Svg(new sxg_core_XmlDocument());
+	return new sxg_Svg(new sxg_core_XmlDocument(),"svg");
 };
 sxg_Svg.dom = function(document) {
-	return new sxg_Svg(new sxg_core_DomDocument(document));
+	return new sxg_Svg(new sxg_core_DomDocument(document),"svg");
 };
 sxg_Svg.prototype = {
 	doc: null
-	,root: null
+	,el: null
+	,rect: function() {
+		var r = new sxg_Rect(this.doc);
+		return r;
+	}
+	,toString: function() {
+		return this.doc.elementToString(this.el);
+	}
 	,createElement: function(name) {
 		return this.doc.createElementNS("http://www.w3.org/2000/svg",name);
 	}
-	,toString: function() {
-		return this.doc.elementToString(this.root);
-	}
 	,__class__: sxg_Svg
 };
+var sxg_Rect = function(doc) {
+	sxg_Svg.call(this,doc,"rect");
+};
+sxg_Rect.__name__ = ["sxg","Rect"];
+sxg_Rect.__super__ = sxg_Svg;
+sxg_Rect.prototype = $extend(sxg_Svg.prototype,{
+	__class__: sxg_Rect
+});
 var sxg_core_Document = function() { };
 sxg_core_Document.__name__ = ["sxg","core","Document"];
 sxg_core_Document.prototype = {
 	createElementNS: null
 	,elementToString: null
+	,appendChild: null
 	,__class__: sxg_core_Document
 };
 var sxg_core_DomDocument = function(document) {
@@ -529,8 +562,10 @@ sxg_core_DomDocument.prototype = {
 	}
 	,elementToString: function(el,pretty) {
 		if(pretty == null) pretty = false;
-		var node = el;
-		return node.outerHTML;
+		return el.outerHTML;
+	}
+	,appendChild: function(parent,child) {
+		parent.appendChild(child);
 	}
 	,__class__: sxg_core_DomDocument
 };
@@ -597,6 +632,10 @@ sxg_core_XmlDocument.prototype = {
 		if(pretty == null) pretty = false;
 		var node = el;
 		return sxg_core_XmlDocument.format(node,0,{ ns : null});
+	}
+	,appendChild: function(parent,child) {
+		parent.addChild(child);
+		return;
 	}
 	,__class__: sxg_core_XmlDocument
 };
@@ -2018,11 +2057,11 @@ sxg_core_XmlDocument.prefixes = (function($this) {
 thx_Ints.pattern_parse = new EReg("^[+-]?(\\d+|0x[0-9A-F]+)$","i");
 thx_Ints.BASE = "0123456789abcdefghijklmnopqrstuvwxyz";
 thx_Strings.UCWORDS = new EReg("[^a-zA-Z]([a-z])","g");
-thx_Strings.UCWORDSWS = new EReg("\\s[a-z]","g");
+thx_Strings.UCWORDSWS = new EReg("[ \t\r\n][a-z]","g");
 thx_Strings.ALPHANUM = new EReg("^[a-z0-9]+$","i");
 thx_Strings.DIGITS = new EReg("^[0-9]+$","");
 thx_Strings.STRIPTAGS = new EReg("</?[a-z]+[^>]*?/?>","gi");
-thx_Strings.WSG = new EReg("\\s+","g");
+thx_Strings.WSG = new EReg("[ \t\r\n]+","g");
 thx_Strings.SPLIT_LINES = new EReg("\r\n|\n\r|\n|\r","g");
 Demo.main();
 })(typeof console != "undefined" ? console : {log:function(){}});
