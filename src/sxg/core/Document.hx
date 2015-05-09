@@ -9,4 +9,5 @@ interface Document<T> {
   function setFloatAttribute(el : T, name : String, value : Float) : Float;
   function getAttribute(el : T, name : String) : String;
   function getFloatAttribute(el : T, name : String) : Float;
+  function removeAttribute(el : T, name : String) : Void;
 }

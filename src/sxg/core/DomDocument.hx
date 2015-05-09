@@ -22,6 +22,9 @@ class DomDocument implements Document<El> {
   public function removeChild(parent : El, child : El)
     parent.removeChild(child);
 
+  public function removeAttribute(el : El, name : String)
+    el.removeAttribute(name);
+
   public function setAttribute(el : El, name : String, value : String) : String {
     el.setAttribute(name, value);
     return value;

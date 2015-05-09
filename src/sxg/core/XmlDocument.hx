@@ -52,6 +52,9 @@ class XmlDocument implements Document<Xml> {
   public function getFloatAttribute(el : Xml, name : String)
     return Std.parseFloat(el.get(name));
 
+  public function removeAttribute(el : Xml, name : String)
+    el.remove(name);
+
   static function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),
         ns    = node.get("xmlns"),
