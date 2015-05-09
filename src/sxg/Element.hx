@@ -6,10 +6,12 @@ import thx.geom.d2.Size;
 class Element<T> {
   public var el(default, null) : T;
   public var doc(default, null) : Document<T>;
+  public var style(default, null) : Style<T>;
 
   function new(doc : Document<T>, name : String) {
     this.doc = doc;
     this.el = createElement(name);
+    this.style = new Style(doc, this.el);
   }
 
   public function arc(cx : Float, cy : Float, startAngle : Float, endAngle : Float, startRadius : Float, endRadius : Float)
