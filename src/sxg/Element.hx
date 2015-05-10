@@ -2,11 +2,13 @@ package sxg;
 
 import sxg.core.*;
 import thx.geom.d2.Size;
+import thx.geom.Matrix23;
 
 class Element<T> {
   public var el(default, null) : T;
   public var doc(default, null) : Document<T>;
   public var style(default, null) : Style<T>;
+  public var transform(default, null) : Matrix23;
 
   function new(doc : Document<T>, name : String) {
     this.doc = doc;
