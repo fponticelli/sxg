@@ -26,12 +26,18 @@ class DomDocument implements Document<El> {
     el.removeAttribute(name);
 
   public function setAttribute(el : El, name : String, value : String) : String {
-    el.setAttribute(name, value);
+    if(null == value)
+      el.removeAttribute(name);
+    else
+      el.setAttribute(name, value);
     return value;
   }
 
-  public function setFloatAttribute(el : El, name : String, value : Float) : Float {
-    el.setAttribute(name, ""+value);
+  public function setFloatAttribute(el : El, name : String, value : Null<Float>) : Float {
+    if(null == value)
+      el.removeAttribute(name);
+    else
+      el.setAttribute(name, ""+value);
     return value;
   }
 

@@ -37,12 +37,18 @@ class XmlDocument implements Document<Xml> {
     parent.removeChild(child);
 
   public function setAttribute(el : Xml, name : String, value : String) {
-    el.set(name, value);
+    if(null == value)
+      el.remove(name);
+    else
+      el.set(name, value);
     return value;
   }
 
-  public function setFloatAttribute(el : Xml, name : String, value : Float) {
-    el.set(name, ""+value);
+  public function setFloatAttribute(el : Xml, name : String, value : Null<Float>) {
+    if(null == value)
+      el.remove(name);
+    else
+      el.set(name, ""+value);
     return value;
   }
 
