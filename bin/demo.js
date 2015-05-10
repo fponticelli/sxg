@@ -731,6 +731,7 @@ sxg_Element.prototype = {
 	el: null
 	,doc: null
 	,style: null
+	,transform: null
 	,arc: function(cx,cy,startAngle,endAngle,startRadius,endRadius) {
 		return this.add(new sxg_Arc(this.doc,cx,cy,startAngle,endAngle,startRadius,endRadius));
 	}
@@ -906,6 +907,7 @@ sxg_Style.__name__ = ["sxg","Style"];
 sxg_Style.prototype = {
 	el: null
 	,doc: null
+	,strokeWidth: null
 	,get_fill: function() {
 		return sxg_Paints.getPaint(this.doc,this.el,"fill",true);
 	}
@@ -918,6 +920,13 @@ sxg_Style.prototype = {
 	}
 	,set_stroke: function(v) {
 		sxg_Paints.apply(v,this.doc,this.el,"stroke",true);
+		return v;
+	}
+	,get_strokeWidth: function() {
+		return sxg_Paints.getPaint(this.doc,this.el,"stroke",true);
+	}
+	,set_strokeWidth: function(v) {
+		this.doc.setFloatAttribute(this.el,"stroke-width",v);
 		return v;
 	}
 	,__class__: sxg_Style
@@ -978,11 +987,11 @@ sxg_core_DomDocument.prototype = {
 		el.removeAttribute(name);
 	}
 	,setAttribute: function(el,name,value) {
-		el.setAttribute(name,value);
+		if(null == value) el.removeAttribute(name); else el.setAttribute(name,value);
 		return value;
 	}
 	,setFloatAttribute: function(el,name,value) {
-		el.setAttribute(name,"" + value);
+		if(null == value) el.removeAttribute(name); else el.setAttribute(name,"" + value);
 		return value;
 	}
 	,getAttribute: function(el,name) {
@@ -4931,6 +4940,12 @@ thx_geom__$Matrix23_Matrix23_$Impl_$.translationAt = function(point) {
 thx_geom__$Matrix23_Matrix23_$Impl_$.create = function(a,b,c,d,e,f) {
 	return new thx_geom_core_MutableM23(a,b,c,d,e,f);
 };
+thx_geom__$Matrix23_Matrix23_$Impl_$.immutable = function(a,b,c,d,e,f) {
+	return new thx_geom_core_ImmutableM23(a,b,c,d,e,f);
+};
+thx_geom__$Matrix23_Matrix23_$Impl_$.linked = function(getA,setA,getB,setB,getC,setC,getD,setD,getE,setE,getF,setF) {
+	return new thx_geom_core_LinkedM23(getA,setA,getB,setB,getC,setC,getD,setD,getE,setE,getF,setF);
+};
 thx_geom__$Matrix23_Matrix23_$Impl_$._new = function(m) {
 	return m;
 };
@@ -5176,6 +5191,73 @@ thx_geom_core_LinkedDimBool.prototype = {
 		return this.setValue(v);
 	}
 	,__class__: thx_geom_core_LinkedDimBool
+};
+var thx_geom_core_LinkedM23 = function(getA,setA,getB,setB,getC,setC,getD,setD,getE,setE,getF,setF) {
+	this.getA = getA;
+	this.getB = getB;
+	this.getC = getC;
+	this.getD = getD;
+	this.getE = getE;
+	this.getF = getF;
+	this.setA = setA;
+	this.setB = setB;
+	this.setC = setC;
+	this.setD = setD;
+	this.setE = setE;
+	this.setF = setF;
+};
+thx_geom_core_LinkedM23.__name__ = ["thx","geom","core","LinkedM23"];
+thx_geom_core_LinkedM23.__interfaces__ = [thx_geom_core_M23];
+thx_geom_core_LinkedM23.prototype = {
+	getA: null
+	,getB: null
+	,getC: null
+	,getD: null
+	,getE: null
+	,getF: null
+	,setA: null
+	,setB: null
+	,setC: null
+	,setD: null
+	,setE: null
+	,setF: null
+	,get_a: function() {
+		return this.getA();
+	}
+	,get_b: function() {
+		return this.getB();
+	}
+	,get_c: function() {
+		return this.getC();
+	}
+	,get_d: function() {
+		return this.getD();
+	}
+	,get_e: function() {
+		return this.getE();
+	}
+	,get_f: function() {
+		return this.getF();
+	}
+	,set_a: function(v) {
+		return this.setA(v);
+	}
+	,set_b: function(v) {
+		return this.setB(v);
+	}
+	,set_c: function(v) {
+		return this.setC(v);
+	}
+	,set_d: function(v) {
+		return this.setD(v);
+	}
+	,set_e: function(v) {
+		return this.setE(v);
+	}
+	,set_f: function(v) {
+		return this.setF(v);
+	}
+	,__class__: thx_geom_core_LinkedM23
 };
 var thx_geom_core_LinkedXY = function(getX,getY,setX,setY) {
 	this.getX = getX;
@@ -8135,12 +8217,7 @@ thx_color__$Grey_Grey_$Impl_$.black = 0;
 thx_color__$Grey_Grey_$Impl_$.white = 1;
 thx_color_parse_ColorParser.parser = new thx_color_parse_ColorParser();
 thx_color_parse_ColorParser.isPureHex = new EReg("^([0-9a-f]{2}){3,4}$","i");
-thx_geom__$Matrix23_Matrix23_$Impl_$.identity = (function($this) {
-	var $r;
-	var m = new thx_geom_core_ImmutableM23(1,0,0,1,0,0);
-	$r = m;
-	return $r;
-}(this));
+thx_geom__$Matrix23_Matrix23_$Impl_$.identity = thx_geom__$Matrix23_Matrix23_$Impl_$.immutable(1,0,0,1,0,0);
 thx_geom_d2__$Point_Point_$Impl_$.zero = new thx_geom_core_ImmutableXY(0,0);
 thx_geom_d2__$Vector_Vector_$Impl_$.zero = new thx_geom_core_ImmutableXY(0,0);
 thx_math_Const.TWO_PI = 6.283185307179586477;

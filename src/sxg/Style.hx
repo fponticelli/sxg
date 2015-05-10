@@ -14,6 +14,7 @@ class Style<T> {
 
   public var fill(get, set) : Paint;
   public var stroke(get, set) : Paint;
+  public var strokeWidth : Null<Float>;
 
   function get_fill()
     return Paints.getPaint(doc, el, "fill", true);
@@ -28,6 +29,14 @@ class Style<T> {
 
   function set_stroke(v : Paint) {
     v.apply(doc, el, "stroke", true);
+    return v;
+  }
+
+  function get_strokeWidth()
+    return Paints.getPaint(doc, el, "stroke", true);
+
+  function set_strokeWidth(v : Null<Float>) {
+    doc.setFloatAttribute(el, "stroke-width", v);
     return v;
   }
 }
