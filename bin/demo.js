@@ -737,6 +737,9 @@ sxg_Element.prototype = {
 	,circle: function(cx,cy,radius) {
 		return this.add(new sxg_Circle(this.doc,cx,cy,radius));
 	}
+	,group: function() {
+		return this.add(new sxg_Group(this.doc));
+	}
 	,rect: function(x,y,w,h) {
 		return this.add(new sxg_Rect(this.doc,x,y,w,h));
 	}
@@ -832,6 +835,14 @@ sxg_Circle.__super__ = sxg_Element;
 sxg_Circle.prototype = $extend(sxg_Element.prototype,{
 	shape: null
 	,__class__: sxg_Circle
+});
+var sxg_Group = function(doc) {
+	sxg_Element.call(this,doc,"g");
+};
+sxg_Group.__name__ = ["sxg","Group"];
+sxg_Group.__super__ = sxg_Element;
+sxg_Group.prototype = $extend(sxg_Element.prototype,{
+	__class__: sxg_Group
 });
 var sxg_Paint = { __ename__ : ["sxg","Paint"], __constructs__ : ["None","Color","Inherit"] };
 sxg_Paint.None = ["None",0];

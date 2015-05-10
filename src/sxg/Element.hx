@@ -20,6 +20,9 @@ class Element<T> {
   public function circle(cx : Float, cy : Float, radius : Float)
     return add(new Circle(doc, cx, cy, radius));
 
+  public function group()
+    return add(new Group(doc));
+
   public function rect(x : Float, y : Float, w : Float, h : Float)
     return add(new Rect(doc, x, y, w, h));
 
