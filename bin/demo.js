@@ -20,9 +20,10 @@ Demo.main = function() {
 };
 Demo.render = function(svg) {
 	var r = svg.rect(15,20,100,40);
-	svg.arc(100,200,0,30,40,60);
+	var a = svg.arc(100,200,0,30,40,60);
 	svg.arc(100,200,35,45,40,60);
 	svg.arc(100,200,50,300,40,60);
+	a.shape.center.set_x(150);
 	svg.circle(100,200,50).style.set_fill(sxg_Paint.Color(thx_color__$HSLA_HSLA_$Impl_$.toRGBXA(thx_color__$HSLA_HSLA_$Impl_$.create(90,0.5,0.7,0.95))));
 	var arc = svg.arc(100,200,-100,200,65,70);
 	arc.style.set_fill(sxg_Paint.Color(thx_color__$HSLA_HSLA_$Impl_$.toRGBXA(thx_color__$HSLA_HSLA_$Impl_$.create(270,0.5,0.7,0.5))));

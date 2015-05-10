@@ -21,9 +21,11 @@ class Demo {
   static function render(svg : Svg<Dynamic>) {
     var r = svg.rect(15, 20, 100, 40);
 
-    svg.arc(100, 200, 0, 30, 40, 60);
+    var a = svg.arc(100, 200, 0, 30, 40, 60);
     svg.arc(100, 200, 35, 45, 40, 60);
     svg.arc(100, 200, 50, 300, 40, 60);
+
+    a.shape.center.x = 150;
 
     svg.circle(100, 200, 50)
       .style.fill = Color(HSLA.create(90, 0.5, 0.7, 0.95));
@@ -31,11 +33,5 @@ class Demo {
     var arc = svg.arc(100, 200, -100, 200, 65, 70);
     arc.style.fill = Color(HSLA.create(270, 0.5, 0.7, 0.5));
     arc.style.stroke = Color(HSLA.create(90, 0.5, 0.7, 1));
-
-//    svg.circle(140, 200, 3);
-//    svg.circle(160, 200, 3);
-//    var a = 30 / 180 * Math.PI;
-//    svg.circle(100 + Math.cos(a) * 40, 200 + Math.sin(a) * 40, 3);
-//    svg.circle(100 + Math.cos(a) * 60, 200 + Math.sin(a) * 60, 3);
   }
 }
