@@ -33,7 +33,7 @@ class DomDocument implements Document<El> {
     return value;
   }
 
-  public function setFloatAttribute(el : El, name : String, value : Null<Float>) : Float {
+  public function setFloatAttribute(el : El, name : String, value : Null<Float>) : Null<Float> {
     if(null == value)
       el.removeAttribute(name);
     else
@@ -44,6 +44,11 @@ class DomDocument implements Document<El> {
   public function getAttribute(el : El, name : String)
     return el.getAttribute(name);
 
-  public function getFloatAttribute(el : El, name : String)
-    return Std.parseFloat(el.getAttribute(name));
+  public function getFloatAttribute(el : El, name : String) : Null<Float> {
+    var v = el.getAttribute(name);
+    if(null == v)
+      return null;
+    else
+      return Std.parseFloat(v);
+  }
 }

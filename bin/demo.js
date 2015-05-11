@@ -186,9 +186,6 @@ Std.parseInt = function(x) {
 	if(isNaN(v)) return null;
 	return v;
 };
-Std.parseFloat = function(x) {
-	return parseFloat(x);
-};
 Std.random = function(x) {
 	if(x <= 0) return 0; else return Math.floor(Math.random() * x);
 };
@@ -998,7 +995,8 @@ sxg_core_DomDocument.prototype = {
 		return el.getAttribute(name);
 	}
 	,getFloatAttribute: function(el,name) {
-		return Std.parseFloat(el.getAttribute(name));
+		var v = el.getAttribute(name);
+		if(null == v) return null; else return parseFloat(v);
 	}
 	,__class__: sxg_core_DomDocument
 };
@@ -1144,18 +1142,19 @@ sxg_core_XmlDocument.prototype = {
 		parent.removeChild(child);
 	}
 	,setAttribute: function(el,name,value) {
-		el.set(name,value);
+		if(null == value) el.remove(name); else el.set(name,value);
 		return value;
 	}
 	,setFloatAttribute: function(el,name,value) {
-		el.set(name,"" + value);
+		if(null == value) el.remove(name); else el.set(name,"" + value);
 		return value;
 	}
 	,getAttribute: function(el,name) {
 		return el.get(name);
 	}
 	,getFloatAttribute: function(el,name) {
-		return Std.parseFloat(el.get(name));
+		var v = el.get(name);
+		if(null == v) return null; else return parseFloat(v);
 	}
 	,removeAttribute: function(el,name) {
 		el.remove(name);
