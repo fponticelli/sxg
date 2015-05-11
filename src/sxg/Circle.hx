@@ -7,7 +7,7 @@ import thx.geom.d2.*;
 import thx.geom.d2.Circle as C;
 import thx.math.Const;
 
-class Circle<T> extends Element<T> {
+class Circle<T : {}> extends Element<T> {
   public var shape(default, null) : C;
   function new(doc : Document<T>, cx : Float, cy : Float, radius : Float) {
     super(doc, "circle");

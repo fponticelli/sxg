@@ -6,7 +6,7 @@ import thx.geom.d2.*;
 import thx.geom.d2.Arc as A;
 import thx.math.Const;
 
-class Arc<T> extends Element<T> {
+class Arc<T : {}> extends Element<T> {
   public var shape(default, null) : A;
   function new(doc : sxg.core.Document<T>, cx : Float, cy : Float, startAngle : Float, endAngle : Float, innerRadius : Float, outerRadius : Float) {
     super(doc, "path");

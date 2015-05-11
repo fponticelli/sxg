@@ -511,6 +511,46 @@ haxe_IMap.prototype = {
 	,set: null
 	,__class__: haxe_IMap
 };
+var haxe_ds_ObjectMap = function() {
+	this.h = { };
+	this.h.__keys__ = { };
+};
+haxe_ds_ObjectMap.__name__ = ["haxe","ds","ObjectMap"];
+haxe_ds_ObjectMap.__interfaces__ = [haxe_IMap];
+haxe_ds_ObjectMap.prototype = {
+	h: null
+	,set: function(key,value) {
+		var id = key.__id__ || (key.__id__ = ++haxe_ds_ObjectMap.count);
+		this.h[id] = value;
+		this.h.__keys__[id] = key;
+	}
+	,get: function(key) {
+		return this.h[key.__id__];
+	}
+	,remove: function(key) {
+		var id = key.__id__;
+		if(this.h.__keys__[id] == null) return false;
+		delete(this.h[id]);
+		delete(this.h.__keys__[id]);
+		return true;
+	}
+	,keys: function() {
+		var a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) a.push(this.h.__keys__[key]);
+		}
+		return HxOverrides.iter(a);
+	}
+	,iterator: function() {
+		return { ref : this.h, it : this.keys(), hasNext : function() {
+			return this.it.hasNext();
+		}, next : function() {
+			var i = this.it.next();
+			return this.ref[i.__id__];
+		}};
+	}
+	,__class__: haxe_ds_ObjectMap
+};
 var haxe_ds_StringMap = function() {
 	this.h = { };
 };
@@ -722,6 +762,7 @@ var sxg_Element = function(doc,name) {
 	this.doc = doc;
 	this.el = this.doc.createElementNS("http://www.w3.org/2000/svg",name);
 	this.style = new sxg_Style(doc,this.el);
+	this.children = new haxe_ds_ObjectMap();
 };
 sxg_Element.__name__ = ["sxg","Element"];
 sxg_Element.prototype = {
@@ -729,11 +770,19 @@ sxg_Element.prototype = {
 	,doc: null
 	,style: null
 	,transform: null
+	,children: null
 	,arc: function(cx,cy,startAngle,endAngle,startRadius,endRadius) {
 		return this.add(new sxg_Arc(this.doc,cx,cy,startAngle,endAngle,startRadius,endRadius));
 	}
 	,circle: function(cx,cy,radius) {
 		return this.add(new sxg_Circle(this.doc,cx,cy,radius));
+	}
+	,clear: function() {
+		var $it0 = this.children.iterator();
+		while( $it0.hasNext() ) {
+			var element = $it0.next();
+			this.remove(element);
+		}
 	}
 	,group: function() {
 		return this.add(new sxg_Group(this.doc));
@@ -741,13 +790,15 @@ sxg_Element.prototype = {
 	,rect: function(x,y,w,h) {
 		return this.add(new sxg_Rect(this.doc,x,y,w,h));
 	}
-	,add: function(svg) {
-		this.doc.appendChild(this.el,svg.el);
-		return svg;
+	,add: function(element) {
+		this.doc.appendChild(this.el,element.el);
+		this.children.set(element.el,element);
+		return element;
 	}
-	,remove: function(svg) {
-		this.doc.removeChild(this.el,svg.el);
-		return svg;
+	,remove: function(element) {
+		this.doc.removeChild(this.el,element.el);
+		this.children.remove(element.el);
+		return element;
 	}
 	,toString: function() {
 		return this.doc.elementToString(this.el);
@@ -8187,6 +8238,7 @@ thx_color_Color.names.set("yellowgreen",value139);
 thx_color_Color.names.set("yellow green",thx_color_Color.yellowgreen);
 Xml.Element = 0;
 Xml.Document = 6;
+haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = {}.toString;
 sxg_Svg.SVG = "http://www.w3.org/2000/svg";
 sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";

@@ -3,7 +3,7 @@ package sxg;
 import sxg.core.*;
 import thx.geom.d2.Size;
 
-class Svg<T> extends Element<T> {
+class Svg<T : {}> extends Element<T> {
   public inline static var SVG   = 'http://www.w3.org/2000/svg';
   public inline static var XMLNS = 'http://www.w3.org/2000/xmlns/';
   public inline static var XLINK = 'http://www.w3.org/1999/xlink';
