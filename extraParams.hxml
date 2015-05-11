@@ -1,0 +1,4 @@
+-lib thx.core
+-lib thx.color
+-lib thx.geom
+-lib thx.math

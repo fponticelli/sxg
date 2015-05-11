@@ -1,0 +1,11 @@
+{
+  "name": "sxg",
+  "url": "https://github.com/fponticelli/sxg",
+  "license": "MIT",
+  "classPath": "src",
+  "tags": ["svg", "geom", "drawing", "cross"],
+  "description": "Library to draw using SVG.",
+  "releasenote": "First release.",
+  "version": "0.1.0",
+  "contributors": ["fponticelli"]
+}
