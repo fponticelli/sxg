@@ -32,6 +32,9 @@ class Element<T : {}> {
   public function group()
     return add(new Group(doc));
 
+  public function path(d : String)
+    return add(new Path(doc, d));
+
   public function rect(x : Float, y : Float, w : Float, h : Float)
     return add(new Rect(doc, x, y, w, h));
 
