@@ -16,6 +16,7 @@ class Element<T : {}> {
     this.el = createElement(name);
     this.style = new Style(doc, this.el);
     this.children = new Map();
+    this.transform = Geom.linkedMatrix(doc, el, Matrix23.identity);
   }
 
   public function arc(cx : Float, cy : Float, startAngle : Float, endAngle : Float, startRadius : Float, endRadius : Float)

@@ -186,6 +186,9 @@ Std.parseInt = function(x) {
 	if(isNaN(v)) return null;
 	return v;
 };
+Std.parseFloat = function(x) {
+	return parseFloat(x);
+};
 Std.random = function(x) {
 	if(x <= 0) return 0; else return Math.floor(Math.random() * x);
 };
@@ -756,13 +759,14 @@ js_Boot.__isNativeObj = function(o) {
 	return js_Boot.__nativeClassName(o) != null;
 };
 js_Boot.__resolveNativeClass = function(name) {
-	if(typeof window != "undefined") return window[name]; else return global[name];
+	return (Function("return typeof " + name + " != \"undefined\" ? " + name + " : null"))();
 };
 var sxg_Element = function(doc,name) {
 	this.doc = doc;
 	this.el = this.doc.createElementNS("http://www.w3.org/2000/svg",name);
 	this.style = new sxg_Style(doc,this.el);
 	this.children = new haxe_ds_ObjectMap();
+	this.transform = sxg_core_Geom.linkedMatrix(doc,this.el,thx_geom__$Matrix23_Matrix23_$Impl_$.identity);
 };
 sxg_Element.__name__ = ["sxg","Element"];
 sxg_Element.prototype = {
@@ -786,6 +790,9 @@ sxg_Element.prototype = {
 	}
 	,group: function() {
 		return this.add(new sxg_Group(this.doc));
+	}
+	,path: function(d) {
+		return this.add(new sxg_Path(this.doc,d));
 	}
 	,rect: function(x,y,w,h) {
 		return this.add(new sxg_Rect(this.doc,x,y,w,h));
@@ -937,6 +944,27 @@ sxg_Paints.apply = function(paint,doc,el,attribute,useAlpha) {
 		break;
 	}
 };
+var sxg_Path = function(doc,d) {
+	sxg_Element.call(this,doc,"path");
+	this.updatePath(d);
+};
+sxg_Path.__name__ = ["sxg","Path"];
+sxg_Path.__super__ = sxg_Element;
+sxg_Path.prototype = $extend(sxg_Element.prototype,{
+	shape: null
+	,updatePath: function(d) {
+		this.set_shape(thx_geom_d2_Path.fromSVGPath(d));
+	}
+	,get_shape: function() {
+		return this.shape;
+	}
+	,set_shape: function(path) {
+		this.shape = path;
+		this.doc.setAttribute(this.el,"d",this.get_shape().toSVGPath());
+		return path;
+	}
+	,__class__: sxg_Path
+});
 var sxg_Rect = function(doc,x,y,w,h) {
 	sxg_Element.call(this,doc,"rect");
 	this.shape = new thx_geom_d2_Rect(sxg_core_Geom.linkedPosition(doc,this.el,null,null,x,y),sxg_core_Geom.linkedSize(doc,this.el,w,h));
@@ -1121,6 +1149,81 @@ sxg_core_Geom.linkedRadius = function(doc,el,radius) {
 	var r = new thx_geom_core_LinkedDim(getRadius,setRadius);
 	if(null != radius) r.set_coord(radius);
 	return r;
+};
+sxg_core_Geom.linkedMatrix = function(doc,el,src) {
+	var cache = null;
+	var m = thx_geom__$Matrix23_Matrix23_$Impl_$.clone(thx_geom__$Matrix23_Matrix23_$Impl_$.identity);
+	var getTransform = function() {
+		var ms = doc.getAttribute(el,"transform");
+		if(ms == cache) return m;
+		if(ms == null || StringTools.trim(ms) == "") m = thx_geom__$Matrix23_Matrix23_$Impl_$.identity; else if(sxg_core_Geom.matrix_pattern.match(ms)) {
+			var v;
+			var _g = [];
+			var _g1 = 1;
+			while(_g1 < 7) {
+				var i = _g1++;
+				_g.push(Std.parseFloat(sxg_core_Geom.matrix_pattern.matched(i)));
+			}
+			v = _g;
+			m = thx_geom__$Matrix23_Matrix23_$Impl_$.create(v[0],v[1],v[2],v[3],v[4],v[5]);
+		} else throw new js__$Boot_HaxeError("invalid matrix format \"" + ms + "\"");
+		cache = ms;
+		return m;
+	};
+	var updateTransform = thx_Functions.noop;
+	var linked = thx_geom__$Matrix23_Matrix23_$Impl_$.linked(function() {
+		var this1 = getTransform();
+		return this1.get_a();
+	},function(v1) {
+		m.set_a(v1);
+		updateTransform();
+		return v1;
+	},function() {
+		var this2 = getTransform();
+		return this2.get_b();
+	},function(v2) {
+		m.set_b(v2);
+		updateTransform();
+		return v2;
+	},function() {
+		var this3 = getTransform();
+		return this3.get_c();
+	},function(v3) {
+		m.set_c(v3);
+		updateTransform();
+		return v3;
+	},function() {
+		var this4 = getTransform();
+		return this4.get_d();
+	},function(v4) {
+		m.set_d(v4);
+		updateTransform();
+		return v4;
+	},function() {
+		var this5 = getTransform();
+		return this5.get_e();
+	},function(v5) {
+		m.set_e(v5);
+		updateTransform();
+		return v5;
+	},function() {
+		var this6 = getTransform();
+		return this6.get_f();
+	},function(v6) {
+		m.set_f(v6);
+		updateTransform();
+		return v6;
+	});
+	thx_geom__$Matrix23_Matrix23_$Impl_$.copyTo(src,linked);
+	updateTransform = function() {
+		if(thx_geom__$Matrix23_Matrix23_$Impl_$.equals(m,thx_geom__$Matrix23_Matrix23_$Impl_$.identity)) doc.removeAttribute(el,"transform"); else {
+			var s = thx_geom__$Matrix23_Matrix23_$Impl_$.toString(m);
+			console.log("transform=\"" + s + "\"");
+			doc.setAttribute(el,"transform",s);
+		}
+	};
+	updateTransform();
+	return linked;
 };
 var sxg_core_XmlDocument = function(xml) {
 	if(null == xml) this.xml = Xml.createDocument(); else this.xml = xml;
@@ -4999,6 +5102,23 @@ thx_geom__$Matrix23_Matrix23_$Impl_$.linked = function(getA,setA,getB,setB,getC,
 thx_geom__$Matrix23_Matrix23_$Impl_$._new = function(m) {
 	return m;
 };
+thx_geom__$Matrix23_Matrix23_$Impl_$.clone = function(this1) {
+	return thx_geom__$Matrix23_Matrix23_$Impl_$.create(this1.get_a(),this1.get_b(),this1.get_c(),this1.get_d(),this1.get_e(),this1.get_f());
+};
+thx_geom__$Matrix23_Matrix23_$Impl_$.copyTo = function(this1,other) {
+	var v = this1.get_a();
+	other.set_a(v);
+	var v1 = this1.get_b();
+	other.set_b(v1);
+	var v2 = this1.get_c();
+	other.set_c(v2);
+	var v3 = this1.get_d();
+	other.set_d(v3);
+	var v4 = this1.get_e();
+	other.set_e(v4);
+	var v5 = this1.get_f();
+	other.set_f(v5);
+};
 thx_geom__$Matrix23_Matrix23_$Impl_$.flipX = function(this1) {
 	return thx_geom__$Matrix23_Matrix23_$Impl_$.mul(this1,-1,0,0,1,0,0);
 };
@@ -5009,7 +5129,13 @@ thx_geom__$Matrix23_Matrix23_$Impl_$.multiply = function(this1,other) {
 	return thx_geom__$Matrix23_Matrix23_$Impl_$.mul(this1,other.get_a(),other.get_b(),other.get_c(),other.get_d(),other.get_e(),other.get_f());
 };
 thx_geom__$Matrix23_Matrix23_$Impl_$.mul = function(this1,a,b,c,d,e,f) {
-	return thx_geom__$Matrix23_Matrix23_$Impl_$.create(this1.get_a() * a + this1.get_c() * b,this1.get_b() * a + this1.get_d() * b,this1.get_a() * c + this1.get_c() * d,this1.get_b() * c + this1.get_d() * d,this1.get_a() * e + this1.get_c() * f + this1.get_e(),this1.get_b() * e + this1.get_d() * f + this1.get_f());
+	this1.set_a(this1.get_a() * a + this1.get_c() * b);
+	this1.set_b(this1.get_b() * a + this1.get_d() * b);
+	this1.set_c(this1.get_a() * c + this1.get_c() * d);
+	this1.set_d(this1.get_b() * c + this1.get_d() * d);
+	this1.set_e(this1.get_a() * e + this1.get_c() * f + this1.get_e());
+	this1.set_f(this1.get_b() * e + this1.get_d() * f + this1.get_f());
+	return this1;
 };
 thx_geom__$Matrix23_Matrix23_$Impl_$.inverse = function(this1) {
 	var det1 = this1.get_a() * this1.get_d() - this1.get_b() * this1.get_c();
@@ -5076,7 +5202,7 @@ thx_geom__$Matrix23_Matrix23_$Impl_$.equals = function(this1,other) {
 	return this1.get_a() == other.get_a() && this1.get_b() == other.get_b() && this1.get_c() == other.get_c() && this1.get_d() == other.get_d() && this1.get_e() == other.get_e() && this1.get_f() == other.get_f();
 };
 thx_geom__$Matrix23_Matrix23_$Impl_$.toString = function(this1) {
-	return "matrix(" + this1.get_a() + "," + this1.get_b() + "," + this1.get_c() + "," + this1.get_d() + "," + this1.get_e() + "," + this1.get_f() + ")";
+	return "matrix(" + this1.get_a() + " " + this1.get_b() + " " + this1.get_c() + " " + this1.get_d() + " " + this1.get_e() + " " + this1.get_f() + ")";
 };
 thx_geom__$Matrix23_Matrix23_$Impl_$.get_a = function(this1) {
 	return this1.get_a();
@@ -5878,7 +6004,7 @@ thx_geom_d2_ArcSegment.prototype = $extend(thx_geom_d2_Segment.prototype,{
 var thx_geom_d2_Circle = function(center,radius) {
 	this.center = center;
 	this.radius = radius;
-	this.box = thx_geom_d2_Rect.fromPoints([this.get_bottomLeft(),this.get_topRight()]);
+	this.box = thx_geom_d2_Rect.fromPoints([this.get_minLeft(),this.get_maxRight()]);
 };
 thx_geom_d2_Circle.__name__ = ["thx","geom","d2","Circle"];
 thx_geom_d2_Circle.__interfaces__ = [thx_geom_d2_IShape];
@@ -5943,10 +6069,10 @@ thx_geom_d2_Circle.prototype = {
 	,box: null
 	,centerLeft: null
 	,centerRight: null
-	,centerTop: null
-	,centerBottom: null
-	,bottomLeft: null
-	,topRight: null
+	,centerMax: null
+	,centerMin: null
+	,minLeft: null
+	,maxRight: null
 	,get_area: function() {
 		var this1 = this.radius;
 		return this1.get_coord() * this1.get_coord() * 3.141592653589793238;
@@ -5978,10 +6104,10 @@ thx_geom_d2_Circle.prototype = {
 	,get_right: function() {
 		return this.center.get_x() + this.radius.get_coord();
 	}
-	,get_top: function() {
+	,get_max: function() {
 		return this.center.get_y() - this.radius.get_coord();
 	}
-	,get_bottom: function() {
+	,get_min: function() {
 		return this.center.get_y() + this.radius.get_coord();
 	}
 	,set_left: function(v) {
@@ -5992,11 +6118,11 @@ thx_geom_d2_Circle.prototype = {
 		var v1 = v - this.radius.get_coord();
 		return this.center.set_x(v1);
 	}
-	,set_top: function(v) {
+	,set_max: function(v) {
 		var v1 = v - this.radius.get_coord();
 		return this.center.set_y(v1);
 	}
-	,set_bottom: function(v) {
+	,set_min: function(v) {
 		var v1 = v + this.radius.get_coord();
 		return this.center.set_y(v1);
 	}
@@ -6048,9 +6174,9 @@ thx_geom_d2_Circle.prototype = {
 		}(this));
 		return this.centerRight;
 	}
-	,get_centerTop: function() {
+	,get_centerMax: function() {
 		var _g = this;
-		if(null == this.centerTop) this.centerTop = (function($this) {
+		if(null == this.centerMax) this.centerMax = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.center.get_x();
@@ -6059,16 +6185,16 @@ thx_geom_d2_Circle.prototype = {
 			},function(v) {
 				return _g.center.set_x(v);
 			},function(v1) {
-				return _g.set_top(v1);
+				return _g.set_max(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.centerTop;
+		return this.centerMax;
 	}
-	,get_centerBottom: function() {
+	,get_centerMin: function() {
 		var _g = this;
-		if(null == this.centerBottom) this.centerBottom = (function($this) {
+		if(null == this.centerMin) this.centerMin = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.center.get_x();
@@ -6077,16 +6203,16 @@ thx_geom_d2_Circle.prototype = {
 			},function(v) {
 				return _g.center.set_x(v);
 			},function(v1) {
-				return _g.set_bottom(v1);
+				return _g.set_min(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.centerBottom;
+		return this.centerMin;
 	}
-	,get_bottomLeft: function() {
+	,get_minLeft: function() {
 		var _g = this;
-		if(null == this.bottomLeft) this.bottomLeft = (function($this) {
+		if(null == this.minLeft) this.minLeft = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.center.get_x() - _g.radius.get_coord();
@@ -6095,16 +6221,16 @@ thx_geom_d2_Circle.prototype = {
 			},function(v) {
 				return _g.set_left(v);
 			},function(v1) {
-				return _g.set_bottom(v1);
+				return _g.set_min(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.bottomLeft;
+		return this.minLeft;
 	}
-	,get_topRight: function() {
+	,get_maxRight: function() {
 		var _g = this;
-		if(null == this.topRight) this.topRight = (function($this) {
+		if(null == this.maxRight) this.maxRight = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.center.get_x() + _g.radius.get_coord();
@@ -6113,12 +6239,12 @@ thx_geom_d2_Circle.prototype = {
 			},function(v) {
 				return _g.set_right(v);
 			},function(v1) {
-				return _g.set_top(v1);
+				return _g.set_max(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.topRight;
+		return this.maxRight;
 	}
 	,__class__: thx_geom_d2_Circle
 };
@@ -6795,10 +6921,10 @@ thx_geom_d2_Rect.fromPoints = function(points) {
 };
 thx_geom_d2_Rect.fromRects = function(rects) {
 	var min = thx_geom_d2__$Point_Point_$Impl_$.linkedMin(thx_Iterators.map($iterator(rects)(),function(_) {
-		return _.get_bottomLeft();
+		return _.get_minLeft();
 	}));
 	var max = thx_geom_d2__$Point_Point_$Impl_$.linkedMax(thx_Iterators.map($iterator(rects)(),function(_1) {
-		return _1.get_topRight();
+		return _1.get_maxRight();
 	}));
 	return thx_geom_d2_Rect.fromPoints([min,max]);
 };
@@ -6809,12 +6935,12 @@ thx_geom_d2_Rect.prototype = {
 	,center: null
 	,centerLeft: null
 	,centerRight: null
-	,centerTop: null
-	,centerBottom: null
-	,topLeft: null
-	,topRight: null
-	,bottomLeft: null
-	,bottomRight: null
+	,centerMax: null
+	,centerMin: null
+	,maxLeft: null
+	,maxRight: null
+	,minLeft: null
+	,minRight: null
 	,corners: null
 	,get_center: function() {
 		var _g = this;
@@ -6870,113 +6996,113 @@ thx_geom_d2_Rect.prototype = {
 		}(this));
 		return this.centerRight;
 	}
-	,get_centerTop: function() {
+	,get_centerMax: function() {
 		var _g = this;
-		if(null == this.centerTop) this.centerTop = (function($this) {
+		if(null == this.centerMax) this.centerMax = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.position.get_x() + _g.size.get_x() / 2;
 			},function() {
-				return _g.get_top();
+				return _g.get_max();
 			},function(v) {
 				return _g.set_x(v - _g.size.get_x() / 2);
 			},function(v1) {
-				return _g.set_top(v1);
+				return _g.set_max(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.centerTop;
+		return this.centerMax;
 	}
-	,get_centerBottom: function() {
+	,get_centerMin: function() {
 		var _g = this;
-		if(null == this.centerBottom) this.centerBottom = (function($this) {
+		if(null == this.centerMin) this.centerMin = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.position.get_x() + _g.size.get_x() / 2;
 			},function() {
-				return _g.get_bottom();
+				return _g.get_min();
 			},function(v) {
 				return _g.set_x(v - _g.size.get_x() / 2);
 			},function(v1) {
-				return _g.set_bottom(v1);
+				return _g.set_min(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.centerBottom;
+		return this.centerMin;
 	}
-	,get_topLeft: function() {
+	,get_maxLeft: function() {
 		var _g = this;
-		if(null == this.topLeft) this.topLeft = (function($this) {
+		if(null == this.maxLeft) this.maxLeft = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.get_left();
 			},function() {
-				return _g.get_top();
+				return _g.get_max();
 			},function(v) {
 				return _g.set_left(v);
 			},function(v1) {
-				return _g.set_top(v1);
+				return _g.set_max(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.topLeft;
+		return this.maxLeft;
 	}
-	,get_topRight: function() {
+	,get_maxRight: function() {
 		var _g = this;
-		if(null == this.topRight) this.topRight = (function($this) {
+		if(null == this.maxRight) this.maxRight = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.get_right();
 			},function() {
-				return _g.get_top();
+				return _g.get_max();
 			},function(v) {
 				return _g.set_right(v);
 			},function(v1) {
-				return _g.set_top(v1);
+				return _g.set_max(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.topRight;
+		return this.maxRight;
 	}
-	,get_bottomLeft: function() {
+	,get_minLeft: function() {
 		var _g = this;
-		if(null == this.bottomLeft) this.bottomLeft = (function($this) {
+		if(null == this.minLeft) this.minLeft = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.get_left();
 			},function() {
-				return _g.get_bottom();
+				return _g.get_min();
 			},function(v) {
 				return _g.set_left(v);
 			},function(v1) {
-				return _g.set_bottom(v1);
+				return _g.set_min(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.bottomLeft;
+		return this.minLeft;
 	}
-	,get_bottomRight: function() {
+	,get_minRight: function() {
 		var _g = this;
-		if(null == this.bottomRight) this.bottomRight = (function($this) {
+		if(null == this.minRight) this.minRight = (function($this) {
 			var $r;
 			var p = new thx_geom_core_LinkedXY(function() {
 				return _g.get_right();
 			},function() {
-				return _g.get_bottom();
+				return _g.get_min();
 			},function(v) {
 				return _g.set_right(v);
 			},function(v1) {
-				return _g.set_bottom(v1);
+				return _g.set_min(v1);
 			});
 			$r = p;
 			return $r;
 		}(this));
-		return this.bottomRight;
+		return this.minRight;
 	}
 	,get_area: function() {
 		var this1 = this.size;
@@ -6992,10 +7118,10 @@ thx_geom_d2_Rect.prototype = {
 	,get_right: function() {
 		return this.position.get_x() + (this.size.get_x() > 0?this.size.get_x():0);
 	}
-	,get_top: function() {
+	,get_max: function() {
 		return this.position.get_y() + (this.size.get_y() > 0?this.size.get_y():0);
 	}
-	,get_bottom: function() {
+	,get_min: function() {
 		return this.position.get_y() + (this.size.get_y() < 0?this.size.get_y():0);
 	}
 	,set_left: function(v) {
@@ -7010,14 +7136,14 @@ thx_geom_d2_Rect.prototype = {
 		this.size.set_x(v - l);
 		return v;
 	}
-	,set_top: function(v) {
-		var b = this.get_bottom();
+	,set_max: function(v) {
+		var b = this.get_min();
 		this.position.set_y(b);
 		this.size.set_y(v - b);
 		return v;
 	}
-	,set_bottom: function(v) {
-		var t = this.get_top();
+	,set_min: function(v) {
+		var t = this.get_max();
 		this.position.set_y(v);
 		this.size.set_y(t - v);
 		return v;
@@ -7047,11 +7173,11 @@ thx_geom_d2_Rect.prototype = {
 		return this.position.set_y(v);
 	}
 	,get_corners: function() {
-		if(null == this.corners) this.corners = [this.get_bottomLeft(),this.get_topLeft(),this.get_topRight(),this.get_bottomRight()];
+		if(null == this.corners) this.corners = [this.get_minLeft(),this.get_maxLeft(),this.get_maxRight(),this.get_minRight()];
 		return this.corners;
 	}
 	,equals: function(other) {
-		return this.get_left() == other.get_left() && this.get_right() == other.get_right() && this.get_top() == other.get_top() && this.get_bottom() == other.get_bottom();
+		return this.get_left() == other.get_left() && this.get_right() == other.get_right() && this.get_max() == other.get_max() && this.get_min() == other.get_min();
 	}
 	,toString: function() {
 		return "Rect(" + this.position.get_x() + "," + this.position.get_y() + "," + this.size.get_x() + "," + this.size.get_y() + ")";
@@ -8243,6 +8369,7 @@ js_Boot.__toStr = {}.toString;
 sxg_Svg.SVG = "http://www.w3.org/2000/svg";
 sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";
 sxg_Svg.XLINK = "http://www.w3.org/1999/xlink";
+sxg_core_Geom.matrix_pattern = new EReg("matrix\\(\\s*(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s*\\)","");
 sxg_core_XmlDocument.prefixes = (function($this) {
 	var $r;
 	var _g = new haxe_ds_StringMap();
