@@ -175,6 +175,11 @@ Reflect.isObject = function(v) {
 	var t = typeof(v);
 	return t == "string" || t == "object" && v.__enum__ == null || t == "function" && (v.__name__ || v.__ename__) != null;
 };
+Reflect.deleteField = function(o,field) {
+	if(!Object.prototype.hasOwnProperty.call(o,field)) return false;
+	delete(o[field]);
+	return true;
+};
 var Std = function() { };
 Std.__name__ = ["Std"];
 Std.string = function(s) {
@@ -331,12 +336,19 @@ Xml.createElement = function(name) {
 	xml.nodeName = name;
 	return xml;
 };
+Xml.createCData = function(data) {
+	var xml = new Xml(Xml.CData);
+	if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) throw new js__$Boot_HaxeError("Bad node type, unexpected " + xml.nodeType);
+	xml.nodeValue = data;
+	return xml;
+};
 Xml.createDocument = function() {
 	return new Xml(Xml.Document);
 };
 Xml.prototype = {
 	nodeType: null
 	,nodeName: null
+	,nodeValue: null
 	,parent: null
 	,children: null
 	,attributeMap: null
@@ -512,6 +524,7 @@ haxe_IMap.__name__ = ["haxe","IMap"];
 haxe_IMap.prototype = {
 	get: null
 	,set: null
+	,keys: null
 	,__class__: haxe_IMap
 };
 var haxe_ds_ObjectMap = function() {
@@ -797,6 +810,9 @@ sxg_Element.prototype = {
 	,rect: function(x,y,w,h) {
 		return this.add(new sxg_Rect(this.doc,x,y,w,h));
 	}
+	,text: function(x,y,text) {
+		return this.add(new sxg_Text(this.doc,x,y,text));
+	}
 	,add: function(element) {
 		this.doc.appendChild(this.el,element.el);
 		this.children.set(element.el,element);
@@ -913,11 +929,11 @@ sxg_Paints.__name__ = ["sxg","Paints"];
 sxg_Paints.getPaint = function(doc,el,attribute,useAlpha) {
 	if(useAlpha == null) useAlpha = true;
 	var alpha = "" + attribute + "-opacity";
-	var s = doc.getAttribute(el,attribute);
+	var s = doc.getStyle(el,attribute);
 	if(null == s) return sxg_Paint.Inherit; else if(s == "none") return sxg_Paint.None; else {
 		var c = thx_color_Color.parse(s);
 		if(useAlpha) {
-			var a = doc.getFloatAttribute(el,alpha);
+			var a = doc.getFloatStyle(el,alpha);
 			if(null != a) c = thx_color__$RGBXA_RGBXA_$Impl_$.withAlpha(c,a);
 		}
 		return sxg_Paint.Color(c);
@@ -928,18 +944,18 @@ sxg_Paints.apply = function(paint,doc,el,attribute,useAlpha) {
 	var alpha = "" + attribute + "-opacity";
 	switch(paint[1]) {
 	case 0:
-		doc.setAttribute(el,attribute,"none");
-		if(useAlpha) doc.removeAttribute(el,alpha);
+		doc.setStyle(el,attribute,"none");
+		if(useAlpha) doc.removeStyle(el,alpha);
 		break;
 	case 2:
-		doc.removeAttribute(el,attribute);
-		doc.removeAttribute(el,alpha);
+		doc.removeStyle(el,attribute);
+		doc.removeStyle(el,alpha);
 		break;
 	case 1:
 		var color = paint[2];
-		doc.setAttribute(el,attribute,thx_color__$RGBX_RGBX_$Impl_$.toCSS3(thx_color__$RGBXA_RGBXA_$Impl_$.toRGBX(color)));
+		doc.setStyle(el,attribute,thx_color__$RGBX_RGBX_$Impl_$.toCSS3(thx_color__$RGBXA_RGBXA_$Impl_$.toRGBX(color)));
 		if(useAlpha) {
-			if(color[3] < 1) doc.setFloatAttribute(el,alpha,color[3]); else doc.removeAttribute(el,alpha);
+			if(color[3] < 1) doc.setFloatStyle(el,alpha,color[3]); else doc.removeStyle(el,alpha);
 		}
 		break;
 	}
@@ -1002,7 +1018,7 @@ sxg_Style.prototype = {
 		return sxg_Paints.getPaint(this.doc,this.el,"stroke",true);
 	}
 	,set_strokeWidth: function(v) {
-		this.doc.setFloatAttribute(this.el,"stroke-width",v);
+		this.doc.setFloatStyle(this.el,"stroke-width",v);
 		return v;
 	}
 	,__class__: sxg_Style
@@ -1023,6 +1039,59 @@ sxg_Svg.prototype = $extend(sxg_Element.prototype,{
 	size: null
 	,__class__: sxg_Svg
 });
+var sxg_Text = function(doc,x,y,content) {
+	sxg_Element.call(this,doc,"text");
+	this.textStyle = new sxg_TextStyle(doc,this.el);
+	this.set_content(content);
+	sxg_core_Geom.linkedPosition(doc,this.el,null,null,x,y);
+};
+sxg_Text.__name__ = ["sxg","Text"];
+sxg_Text.__super__ = sxg_Element;
+sxg_Text.prototype = $extend(sxg_Element.prototype,{
+	position: null
+	,textStyle: null
+	,get_content: function() {
+		return this.doc.getTextContent(this.el);
+	}
+	,set_content: function(t) {
+		this.doc.setTextContent(this.el,t);
+		return t;
+	}
+	,__class__: sxg_Text
+});
+var sxg_TextStyle = function(doc,el) {
+	this.doc = doc;
+	this.el = el;
+};
+sxg_TextStyle.__name__ = ["sxg","TextStyle"];
+sxg_TextStyle.prototype = {
+	el: null
+	,doc: null
+	,get_anchor: function() {
+		return sxg__$TextStyle_TextAnchor_$Impl_$.parse(this.doc.getAttribute(this.el,"text-anchor"));
+	}
+	,set_anchor: function(v) {
+		this.doc.setAttribute(this.el,"text-anchor",v);
+		return v;
+	}
+	,__class__: sxg_TextStyle
+};
+var sxg__$TextStyle_TextAnchor_$Impl_$ = {};
+sxg__$TextStyle_TextAnchor_$Impl_$.__name__ = ["sxg","_TextStyle","TextAnchor_Impl_"];
+sxg__$TextStyle_TextAnchor_$Impl_$.parse = function(s) {
+	if(null == s) return null;
+	var _g = s.toLowerCase();
+	switch(_g) {
+	case "start":
+		return "start";
+	case "end":
+		return "end";
+	case "middle":
+		return "middle";
+	default:
+		throw new js__$Boot_HaxeError("Invalid anchor value \"" + s + "\"");
+	}
+};
 var sxg_core_Document = function() { };
 sxg_core_Document.__name__ = ["sxg","core","Document"];
 sxg_core_Document.prototype = {
@@ -1030,11 +1099,18 @@ sxg_core_Document.prototype = {
 	,elementToString: null
 	,appendChild: null
 	,removeChild: null
-	,setAttribute: null
-	,setFloatAttribute: null
 	,getAttribute: null
+	,setAttribute: null
 	,getFloatAttribute: null
+	,setFloatAttribute: null
 	,removeAttribute: null
+	,getStyle: null
+	,setStyle: null
+	,getFloatStyle: null
+	,setFloatStyle: null
+	,removeStyle: null
+	,getTextContent: null
+	,setTextContent: null
 	,__class__: sxg_core_Document
 };
 var sxg_core_DomDocument = function(document) {
@@ -1062,20 +1138,45 @@ sxg_core_DomDocument.prototype = {
 	,removeAttribute: function(el,name) {
 		el.removeAttribute(name);
 	}
+	,getAttribute: function(el,name) {
+		return el.getAttribute(name);
+	}
 	,setAttribute: function(el,name,value) {
 		if(null == value) el.removeAttribute(name); else el.setAttribute(name,value);
 		return value;
+	}
+	,getFloatAttribute: function(el,name) {
+		var v = el.getAttribute(name);
+		if(null == v) return null; else return parseFloat(v);
 	}
 	,setFloatAttribute: function(el,name,value) {
 		if(null == value) el.removeAttribute(name); else el.setAttribute(name,"" + value);
 		return value;
 	}
-	,getAttribute: function(el,name) {
-		return el.getAttribute(name);
+	,getStyle: function(el,name) {
+		return doc.getComputedStyle(el)[ruleName];
 	}
-	,getFloatAttribute: function(el,name) {
-		var v = el.getAttribute(name);
-		if(null == v) return null; else return parseFloat(v);
+	,setStyle: function(el,name,value) {
+		el.style[name] = value;
+		return value;
+	}
+	,getFloatStyle: function(el,name) {
+		var s = this.getStyle(el,name);
+		if(null == s) return null;
+		return parseFloat(s);
+	}
+	,setFloatStyle: function(el,name,value) {
+		this.setStyle(el,name,"" + value);
+		return value;
+	}
+	,removeStyle: function(el,name) {
+		Reflect.deleteField(el.style,name);
+	}
+	,getTextContent: function(el) {
+		return el.textContent;
+	}
+	,setTextContent: function(el,content) {
+		return el.textContent = content;
 	}
 	,__class__: sxg_core_DomDocument
 };
@@ -1227,53 +1328,13 @@ sxg_core_Geom.linkedMatrix = function(doc,el,src) {
 };
 var sxg_core_XmlDocument = function(xml) {
 	if(null == xml) this.xml = Xml.createDocument(); else this.xml = xml;
+	this.styles = new haxe_ds_ObjectMap();
 };
 sxg_core_XmlDocument.__name__ = ["sxg","core","XmlDocument"];
 sxg_core_XmlDocument.__interfaces__ = [sxg_core_Document];
-sxg_core_XmlDocument.format = function(node,ind,def) {
-	var ws = thx_Strings.repeat("  ",ind);
-	var ns = node.get("xmlns");
-	var attributes = sxg_core_XmlDocument.formatAttributes(node,def);
-	var prefix;
-	if(ns == def.ns) prefix = ""; else prefix = sxg_core_XmlDocument.prefixes.get(ns) + ":";
-	var open;
-	open = "" + ws + "<" + prefix + (function($this) {
-		var $r;
-		if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
-		$r = node.nodeName;
-		return $r;
-	}(this)) + attributes + ">";
-	var close;
-	close = "</" + (function($this) {
-		var $r;
-		if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
-		$r = node.nodeName;
-		return $r;
-	}(this)) + ">";
-	var children = node.elements();
-	var schildren;
-	if(children.hasNext()) schildren = thx_Iterators.map(children,function(child) {
-		return sxg_core_XmlDocument.format(child,ind + 1,def);
-	}).join("\n"); else schildren = null;
-	return open + (schildren == null?"":"\n" + schildren + "\n" + ws) + close;
-};
-sxg_core_XmlDocument.formatAttributes = function(node,def) {
-	return thx_Iterators.filter(node.attributes(),function(att) {
-		if(att != "xmlns") return true;
-		var value = node.get(att);
-		if(null == value) return true;
-		if(null == def.ns) {
-			def.ns = value;
-			return true;
-		}
-		return !sxg_core_XmlDocument.prefixes.exists(def.ns);
-	}).map(function(att1) {
-		var value1 = StringTools.replace(StringTools.replace(StringTools.replace(node.get(att1),"&","&amp;"),"<","&lt;"),"\"","&quot;");
-		return " " + att1 + "=\"" + value1 + "\"";
-	}).join("");
-};
 sxg_core_XmlDocument.prototype = {
 	xml: null
+	,styles: null
 	,createElementNS: function(ns,name) {
 		var xml = Xml.createElement(name);
 		xml.set("xmlns",ns);
@@ -1287,7 +1348,7 @@ sxg_core_XmlDocument.prototype = {
 	,elementToString: function(el,pretty) {
 		if(pretty == null) pretty = false;
 		var node = el;
-		return sxg_core_XmlDocument.format(node,0,{ ns : null});
+		return this.format(node,0,{ ns : null});
 	}
 	,appendChild: function(parent,child) {
 		parent.addChild(child);
@@ -1295,23 +1356,129 @@ sxg_core_XmlDocument.prototype = {
 	,removeChild: function(parent,child) {
 		parent.removeChild(child);
 	}
+	,getAttribute: function(el,name) {
+		return el.get(name);
+	}
 	,setAttribute: function(el,name,value) {
 		if(null == value) el.remove(name); else el.set(name,value);
 		return value;
-	}
-	,setFloatAttribute: function(el,name,value) {
-		if(null == value) el.remove(name); else el.set(name,"" + value);
-		return value;
-	}
-	,getAttribute: function(el,name) {
-		return el.get(name);
 	}
 	,getFloatAttribute: function(el,name) {
 		var v = el.get(name);
 		if(null == v) return null; else return parseFloat(v);
 	}
+	,setFloatAttribute: function(el,name,value) {
+		if(null == value) el.remove(name); else el.set(name,"" + value);
+		return value;
+	}
 	,removeAttribute: function(el,name) {
 		el.remove(name);
+	}
+	,getStyle: function(el,name) {
+		var map = this.styles.h[el.__id__];
+		if(null == map) return null;
+		return __map_reserved[name] != null?map.getReserved(name):map.h[name];
+	}
+	,setStyle: function(el,name,value) {
+		var map = this.styles.h[el.__id__];
+		if(null == map) {
+			map = new haxe_ds_StringMap();
+			this.styles.set(el,map);
+		}
+		if(__map_reserved[name] != null) map.setReserved(name,value); else map.h[name] = value;
+		return value;
+	}
+	,getFloatStyle: function(el,name) {
+		var s = this.getStyle(el,name);
+		if(null == s) return null;
+		return parseFloat(s);
+	}
+	,setFloatStyle: function(el,name,value) {
+		this.setStyle(el,name,"" + value);
+		return value;
+	}
+	,removeStyle: function(el,name) {
+		var map = this.styles.h[el.__id__];
+		if(null == map) return;
+		map.remove(name);
+	}
+	,getTextContent: function(el) {
+		var $it0 = (function($this) {
+			var $r;
+			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType);
+			$r = HxOverrides.iter(el.children);
+			return $r;
+		}(this));
+		while( $it0.hasNext() ) {
+			var child = $it0.next();
+			if(child.nodeType == Xml.CData) {
+				if(child.nodeType == Xml.Document || child.nodeType == Xml.Element) throw new js__$Boot_HaxeError("Bad node type, unexpected " + child.nodeType);
+				return child.nodeValue;
+			}
+		}
+		return null;
+	}
+	,setTextContent: function(el,content) {
+		var child;
+		while(null != ((function($this) {
+			var $r;
+			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType);
+			$r = child = el.children[0];
+			return $r;
+		}(this)))) el.removeChild(child);
+		el.addChild(Xml.createCData(content));
+		return content;
+	}
+	,format: function(node,ind,def) {
+		var _g = this;
+		var ws = thx_Strings.repeat("  ",ind);
+		var ns = node.get("xmlns");
+		var attributes = this.formatAttributes(node,def);
+		var styles = this.formatStyles(this.styles.h[node.__id__]);
+		var prefix;
+		if(ns == def.ns) prefix = ""; else prefix = sxg_core_XmlDocument.prefixes.get(ns) + ":";
+		var open;
+		open = "" + ws + "<" + prefix + (function($this) {
+			var $r;
+			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
+			$r = node.nodeName;
+			return $r;
+		}(this)) + styles + attributes + ">";
+		var close;
+		close = "</" + (function($this) {
+			var $r;
+			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
+			$r = node.nodeName;
+			return $r;
+		}(this)) + ">";
+		var children = node.elements();
+		var schildren;
+		if(children.hasNext()) schildren = thx_Iterators.map(children,function(child) {
+			return _g.format(child,ind + 1,def);
+		}).join("\n"); else schildren = null;
+		return open + (schildren == null?"":"\n" + schildren + "\n" + ws) + close;
+	}
+	,formatStyles: function(map) {
+		if(null == map) return "";
+		var rules = thx_Maps.tuples(map).map(function(_) {
+			return "" + _._0 + ":" + _._1;
+		}).join("; ");
+		return " style=\"" + rules + "\"";
+	}
+	,formatAttributes: function(node,def) {
+		return thx_Iterators.filter(node.attributes(),function(att) {
+			if(att != "xmlns") return true;
+			var value = node.get(att);
+			if(null == value) return true;
+			if(null == def.ns) {
+				def.ns = value;
+				return true;
+			}
+			return !sxg_core_XmlDocument.prefixes.exists(def.ns);
+		}).map(function(att1) {
+			var value1 = StringTools.replace(StringTools.replace(StringTools.replace(node.get(att1),"&","&amp;"),"<","&lt;"),"\"","&quot;");
+			return " " + att1 + "=\"" + value1 + "\"";
+		}).join("");
 	}
 	,__class__: sxg_core_XmlDocument
 };
@@ -2399,6 +2566,27 @@ thx_Iterators.zip5 = function(it1,it2,it3,it4,it5) {
 		return $r;
 	}(this)));
 	return array;
+};
+var thx_Maps = function() { };
+thx_Maps.__name__ = ["thx","Maps"];
+thx_Maps.tuples = function(map) {
+	return thx_Iterators.map(map.keys(),function(key) {
+		var _1 = map.get(key);
+		return { _0 : key, _1 : _1};
+	});
+};
+thx_Maps.mapToObject = function(map) {
+	return thx_Arrays.reduce(thx_Maps.tuples(map),function(o,t) {
+		o[t._0] = t._1;
+		return o;
+	},{ });
+};
+thx_Maps.getAlt = function(map,key,alt) {
+	var v = map.get(key);
+	if(null == v) return alt; else return v;
+};
+thx_Maps.isMap = function(v) {
+	return js_Boot.__instanceof(v,haxe_IMap);
 };
 var thx_Nil = { __ename__ : ["thx","Nil"], __constructs__ : ["nil"] };
 thx_Nil.nil = ["nil",0];
@@ -8363,12 +8551,16 @@ var value139 = thx_color_Color.yellowgreen = 10145074;
 thx_color_Color.names.set("yellowgreen",value139);
 thx_color_Color.names.set("yellow green",thx_color_Color.yellowgreen);
 Xml.Element = 0;
+Xml.CData = 2;
 Xml.Document = 6;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = {}.toString;
 sxg_Svg.SVG = "http://www.w3.org/2000/svg";
 sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";
 sxg_Svg.XLINK = "http://www.w3.org/1999/xlink";
+sxg__$TextStyle_TextAnchor_$Impl_$.Start = "start";
+sxg__$TextStyle_TextAnchor_$Impl_$.Middle = "middle";
+sxg__$TextStyle_TextAnchor_$Impl_$.End = "end";
 sxg_core_Geom.matrix_pattern = new EReg("matrix\\(\\s*(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s*\\)","");
 sxg_core_XmlDocument.prefixes = (function($this) {
 	var $r;

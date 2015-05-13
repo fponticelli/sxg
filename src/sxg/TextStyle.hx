@@ -29,7 +29,7 @@ abstract TextAnchor(String) to String {
   var Middle = "middle";
   var End = "end";
 
-  public static var parse(s : String) : TextAnchor {
+  public static function parse(s : String) : TextAnchor {
     if(null == s)
       return null;
     return switch s.toLowerCase() {
