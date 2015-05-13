@@ -71,4 +71,8 @@ class DomDocument implements Document<El> {
     setStyle(el, name, '$value');
     return value;
   }
+
+  public function removeStyle(el : El, name : String) {
+    Reflect.deleteField(el.style, name);
+  }
 }

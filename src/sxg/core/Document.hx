@@ -9,9 +9,10 @@ interface Document<T> {
   function setAttribute(el : T, name : String, value : String) : String;
   function getFloatAttribute(el : T, name : String) : Null<Float>;
   function setFloatAttribute(el : T, name : String, value : Null<Float>) : Null<Float>;
+  function removeAttribute(el : T, name : String) : Void;
   function getStyle(el : T, name : String) : String;
   function setStyle(el : T, name : String, value : String) : String;
   function getFloatStyle(el : T, name : String) : Null<Float>;
   function setFloatStyle(el : T, name : String, value : Null<Float>) : Null<Float>;
-  function removeAttribute(el : T, name : String) : Void;
+  function removeStyle(el : T, name : String) : Void;
 }

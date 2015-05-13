@@ -98,6 +98,12 @@ class XmlDocument implements Document<Xml> {
     return value;
   }
 
+  public function removeStyle(el : Xml, name : String) {
+    var map = styles.get(el);
+    if(null == map) return;
+    map.remove(name);
+  }
+
   function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),
         ns    = node.get("xmlns"),
@@ -117,7 +123,7 @@ class XmlDocument implements Document<Xml> {
   function formatStyles(map : Map<String, String>) : String {
     if(null == map)
       return "";
-    var rules = map.tuples().pluck('${_.left}: ${_.right}').join(";");
+    var rules = map.tuples().pluck('${_.left}:${_.right}').join("; ");
     return ' style="$rules"';
   }
 
