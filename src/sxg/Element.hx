@@ -39,6 +39,9 @@ class Element<T : {}> {
   public function rect(x : Float, y : Float, w : Float, h : Float)
     return add(new Rect(doc, x, y, w, h));
 
+  public function text(x : Float, y : Float, text : String)
+    return add(new Text(doc, x, y, text));
+
   public function add<TIn : Element<T>>(element : TIn) : TIn {
     doc.appendChild(el, element.el);
     children.set(element.el, element);
