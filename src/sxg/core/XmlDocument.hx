@@ -104,6 +104,22 @@ class XmlDocument implements Document<Xml> {
     map.remove(name);
   }
 
+  public function getTextContent(el : Xml) : String {
+    for(child in el) {
+      if(child.nodeType == Xml.CData)
+        return child.nodeValue;
+    }
+    return null;
+  }
+
+  public function setTextContent(el : Xml, content : String) : String {
+    var child;
+    while(null != (child = el.firstChild()))
+      el.removeChild(child);
+    el.addChild(Xml.createCData(content));
+    return content;
+  }
+
   function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),
         ns    = node.get("xmlns"),

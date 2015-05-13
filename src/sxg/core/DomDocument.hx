@@ -75,4 +75,10 @@ class DomDocument implements Document<El> {
   public function removeStyle(el : El, name : String) {
     Reflect.deleteField(el.style, name);
   }
+
+  public function getTextContent(el : El) : String
+    return el.textContent;
+
+  public function setTextContent(el : El, content : String) : String
+    return el.textContent = content;
 }

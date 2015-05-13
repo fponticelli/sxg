@@ -15,4 +15,6 @@ interface Document<T> {
   function getFloatStyle(el : T, name : String) : Null<Float>;
   function setFloatStyle(el : T, name : String, value : Null<Float>) : Null<Float>;
   function removeStyle(el : T, name : String) : Void;
+  function getTextContent(el : T) : String;
+  function setTextContent(el : T, content : String) : String;
 }
