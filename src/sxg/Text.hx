@@ -7,12 +7,12 @@ import thx.geom.d2.*;
 class Text<T : {}> extends Element<T> {
   public var content(get, set) : String;
   public var position(default, null) : Point;
-  public var textStyle(default, null) : TextStyle<T>;
+  public var font(default, null) : Font<T>;
   public var anchor(get, set) : TextAnchor;
 
   function new(doc : Document<T>, x : Float, y : Float, content : String) {
     super(doc, "text");
-    this.textStyle = new TextStyle(doc, el);
+    this.font = new Font(doc, el);
     this.content = content;
     Geom.linkedPosition(doc, el, x, y);
   }

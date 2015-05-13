@@ -908,6 +908,28 @@ sxg_Circle.prototype = $extend(sxg_Element.prototype,{
 	shape: null
 	,__class__: sxg_Circle
 });
+var sxg_Font = function(doc,el) {
+	this.doc = doc;
+	this.el = el;
+};
+sxg_Font.__name__ = ["sxg","Font"];
+sxg_Font.prototype = {
+	el: null
+	,doc: null
+	,get_family: function() {
+		return this.doc.getStyle(this.el,"font-family");
+	}
+	,set_family: function(v) {
+		return this.doc.setStyle(this.el,"font-family",v);
+	}
+	,get_size: function() {
+		return this.doc.getFloatStyle(this.el,"font-family");
+	}
+	,set_size: function(v) {
+		return this.doc.setFloatStyle(this.el,"font-family",v);
+	}
+	,__class__: sxg_Font
+};
 var sxg_Group = function(doc) {
 	sxg_Element.call(this,doc,"g");
 };
@@ -1041,7 +1063,7 @@ sxg_Svg.prototype = $extend(sxg_Element.prototype,{
 });
 var sxg_Text = function(doc,x,y,content) {
 	sxg_Element.call(this,doc,"text");
-	this.textStyle = new sxg_TextStyle(doc,this.el);
+	this.font = new sxg_Font(doc,this.el);
 	this.set_content(content);
 	sxg_core_Geom.linkedPosition(doc,this.el,null,null,x,y);
 };
@@ -1049,48 +1071,25 @@ sxg_Text.__name__ = ["sxg","Text"];
 sxg_Text.__super__ = sxg_Element;
 sxg_Text.prototype = $extend(sxg_Element.prototype,{
 	position: null
-	,textStyle: null
-	,get_content: function() {
-		return this.doc.getTextContent(this.el);
-	}
-	,set_content: function(t) {
-		this.doc.setTextContent(this.el,t);
-		return t;
-	}
-	,__class__: sxg_Text
-});
-var sxg_TextStyle = function(doc,el) {
-	this.doc = doc;
-	this.el = el;
-};
-sxg_TextStyle.__name__ = ["sxg","TextStyle"];
-sxg_TextStyle.prototype = {
-	el: null
-	,doc: null
+	,font: null
 	,get_anchor: function() {
-		return sxg__$TextStyle_TextAnchor_$Impl_$.parse(this.doc.getAttribute(this.el,"text-anchor"));
+		return sxg__$Text_TextAnchor_$Impl_$.parse(this.doc.getAttribute(this.el,"text-anchor"));
 	}
 	,set_anchor: function(v) {
 		this.doc.setAttribute(this.el,"text-anchor",v);
 		return v;
 	}
-	,get_fontFamily: function() {
-		return this.doc.getStyle(this.el,"font-family");
+	,get_content: function() {
+		return this.doc.getTextContent(this.el);
 	}
-	,set_fontFamily: function(v) {
-		return this.doc.setStyle(this.el,"font-family",v);
+	,set_content: function(t) {
+		return this.doc.setTextContent(this.el,t);
 	}
-	,get_fontSize: function() {
-		return this.doc.getFloatStyle(this.el,"font-family");
-	}
-	,set_fontSize: function(v) {
-		return this.doc.setFloatStyle(this.el,"font-family",v);
-	}
-	,__class__: sxg_TextStyle
-};
-var sxg__$TextStyle_TextAnchor_$Impl_$ = {};
-sxg__$TextStyle_TextAnchor_$Impl_$.__name__ = ["sxg","_TextStyle","TextAnchor_Impl_"];
-sxg__$TextStyle_TextAnchor_$Impl_$.parse = function(s) {
+	,__class__: sxg_Text
+});
+var sxg__$Text_TextAnchor_$Impl_$ = {};
+sxg__$Text_TextAnchor_$Impl_$.__name__ = ["sxg","_Text","TextAnchor_Impl_"];
+sxg__$Text_TextAnchor_$Impl_$.parse = function(s) {
 	if(null == s) return null;
 	var _g = s.toLowerCase();
 	switch(_g) {
@@ -8570,9 +8569,9 @@ js_Boot.__toStr = {}.toString;
 sxg_Svg.SVG = "http://www.w3.org/2000/svg";
 sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";
 sxg_Svg.XLINK = "http://www.w3.org/1999/xlink";
-sxg__$TextStyle_TextAnchor_$Impl_$.Start = "start";
-sxg__$TextStyle_TextAnchor_$Impl_$.Middle = "middle";
-sxg__$TextStyle_TextAnchor_$Impl_$.End = "end";
+sxg__$Text_TextAnchor_$Impl_$.Start = "start";
+sxg__$Text_TextAnchor_$Impl_$.Middle = "middle";
+sxg__$Text_TextAnchor_$Impl_$.End = "end";
 sxg_core_Geom.matrix_pattern = new EReg("matrix\\(\\s*(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s+(-?(?:\\d+|\\d*\\.\\d+)(?:e-?\\d+)?)\\s*\\)","");
 sxg_core_XmlDocument.prefixes = (function($this) {
 	var $r;
