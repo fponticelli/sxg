@@ -5,7 +5,6 @@ import sxg.core.Document;
 import thx.Functions;
 import thx.geom.d2.*;
 import thx.geom.d2.Circle as C;
-import thx.math.Const;
 
 class Circle<T : {}> extends Element<T> {
   public var shape(default, null) : C;

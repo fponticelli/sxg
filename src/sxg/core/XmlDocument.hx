@@ -36,6 +36,9 @@ class XmlDocument implements Document<Xml> {
   public function removeChild(parent : Xml, child : Xml)
     parent.removeChild(child);
 
+  public function getAttribute(el : Xml, name : String)
+    return el.get(name);
+
   public function setAttribute(el : Xml, name : String, value : String) {
     if(null == value)
       el.remove(name);
@@ -44,23 +47,20 @@ class XmlDocument implements Document<Xml> {
     return value;
   }
 
-  public function setFloatAttribute(el : Xml, name : String, value : Null<Float>) : Null<Float> {
-    if(null == value)
-      el.remove(name);
-    else
-      el.set(name, ""+value);
-    return value;
-  }
-
-  public function getAttribute(el : Xml, name : String)
-    return el.get(name);
-
   public function getFloatAttribute(el : Xml, name : String) : Null<Float> {
     var v = el.get(name);
     if(null == v)
       return null;
     else
       return Std.parseFloat(v);
+  }
+
+  public function setFloatAttribute(el : Xml, name : String, value : Null<Float>) : Null<Float> {
+    if(null == value)
+      el.remove(name);
+    else
+      el.set(name, ""+value);
+    return value;
   }
 
   public function removeAttribute(el : Xml, name : String)

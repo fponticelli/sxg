@@ -25,6 +25,9 @@ class DomDocument implements Document<El> {
   public function removeAttribute(el : El, name : String)
     el.removeAttribute(name);
 
+  public function getAttribute(el : El, name : String)
+    return el.getAttribute(name);
+
   public function setAttribute(el : El, name : String, value : String) : String {
     if(null == value)
       el.removeAttribute(name);
@@ -33,22 +36,19 @@ class DomDocument implements Document<El> {
     return value;
   }
 
-  public function setFloatAttribute(el : El, name : String, value : Null<Float>) : Null<Float> {
-    if(null == value)
-      el.removeAttribute(name);
-    else
-      el.setAttribute(name, ""+value);
-    return value;
-  }
-
-  public function getAttribute(el : El, name : String)
-    return el.getAttribute(name);
-
   public function getFloatAttribute(el : El, name : String) : Null<Float> {
     var v = el.getAttribute(name);
     if(null == v)
       return null;
     else
       return Std.parseFloat(v);
+  }
+
+  public function setFloatAttribute(el : El, name : String, value : Null<Float>) : Null<Float> {
+    if(null == value)
+      el.removeAttribute(name);
+    else
+      el.setAttribute(name, ""+value);
+    return value;
   }
 }
