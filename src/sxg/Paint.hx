@@ -13,7 +13,7 @@ enum Paint {
 class Paints {
   public static function getPaint<T>(doc : Document<T>, el : T, attribute : String, useAlpha = true) {
     var alpha = '$attribute-opacity';
-    var s = doc.getAttribute(el, attribute);
+    var s = doc.getStyle(el, attribute);
     if(null == s)
       return Inherit;
     else if(s == "none")
@@ -21,7 +21,7 @@ class Paints {
     else {
       var c = C.parse(s);
       if(useAlpha) {
-        var a = doc.getFloatAttribute(el, alpha);
+        var a = doc.getFloatStyle(el, alpha);
         if(null != a)
           c = c.withAlpha(a);
       }
@@ -33,19 +33,19 @@ class Paints {
     var alpha = '$attribute-opacity';
     switch paint {
       case None:
-        doc.setAttribute(el, attribute, "none");
+        doc.setStyle(el, attribute, "none");
         if(useAlpha)
-          doc.removeAttribute(el, alpha);
+          doc.removeStyle(el, alpha);
       case Inherit:
-        doc.removeAttribute(el, attribute);
-        doc.removeAttribute(el, alpha);
+        doc.removeStyle(el, attribute);
+        doc.removeStyle(el, alpha);
       case Color(color):
-        doc.setAttribute(el, attribute, color.toRGBX().toCSS3());
+        doc.setStyle(el, attribute, color.toRGBX().toCSS3());
         if(useAlpha) {
           if(color.alphaf < 1)
-            doc.setFloatAttribute(el, alpha, color.alphaf);
+            doc.setFloatStyle(el, alpha, color.alphaf);
           else
-            doc.removeAttribute(el, alpha);
+            doc.removeStyle(el, alpha);
         }
     }
   }

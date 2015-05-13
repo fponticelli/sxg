@@ -36,7 +36,7 @@ class Style<T> {
     return Paints.getPaint(doc, el, "stroke", true);
 
   function set_strokeWidth(v : Null<Float>) {
-    doc.setFloatAttribute(el, "stroke-width", v);
+    doc.setFloatStyle(el, "stroke-width", v);
     return v;
   }
 }
