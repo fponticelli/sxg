@@ -1074,6 +1074,18 @@ sxg_TextStyle.prototype = {
 		this.doc.setAttribute(this.el,"text-anchor",v);
 		return v;
 	}
+	,get_fontFamily: function() {
+		return this.doc.getStyle(this.el,"font-family");
+	}
+	,set_fontFamily: function(v) {
+		return this.doc.setStyle(this.el,"font-family",v);
+	}
+	,get_fontSize: function() {
+		return this.doc.getFloatStyle(this.el,"font-family");
+	}
+	,set_fontSize: function(v) {
+		return this.doc.setFloatStyle(this.el,"font-family",v);
+	}
 	,__class__: sxg_TextStyle
 };
 var sxg__$TextStyle_TextAnchor_$Impl_$ = {};

@@ -13,6 +13,8 @@ class TextStyle<T> {
   }
 
   public var anchor(get, set) : TextAnchor;
+  public var fontFamily(get, set) : String;
+  public var fontSize(get, set) : Float;
 
   function get_anchor()
     return TextAnchor.parse(doc.getAttribute(el, "text-anchor"));
@@ -21,6 +23,18 @@ class TextStyle<T> {
     doc.setAttribute(el, "text-anchor", v);
     return v;
   }
+
+  function get_fontFamily()
+    return doc.getStyle(el, "font-family");
+
+  function set_fontFamily(v : String)
+    return doc.setStyle(el, "font-family", v);
+
+  function get_fontSize()
+    return doc.getFloatStyle(el, "font-family");
+
+  function set_fontSize(v : Float)
+    return doc.setFloatStyle(el, "font-family", v);
 }
 
 @:enum
