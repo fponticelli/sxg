@@ -24,5 +24,5 @@ class Font<T> {
     return doc.getFloatStyle(el, "font-family");
 
   function set_size(v : Float)
-    return doc.setFloatStyle(el, "font-family", v);
+    return doc.setFloatStyle(el, "font-size", v);
 }
