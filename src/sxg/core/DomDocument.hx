@@ -51,4 +51,24 @@ class DomDocument implements Document<El> {
       el.setAttribute(name, ""+value);
     return value;
   }
+
+  public function getStyle(el : El, name : String) : String
+    return untyped __js__("doc.getComputedStyle")(el)[ruleName];
+
+  public function setStyle(el : El, name : String, value : String) : String {
+    Reflect.setField(el.style, name, value);
+    return value;
+  }
+
+  public function getFloatStyle(el : El, name : String) : Null<Float> {
+    var s = getStyle(el, name);
+    if(null == s)
+      return null;
+    return Std.parseFloat(s);
+  }
+
+  public function setFloatStyle(el : El, name : String, value : Null<Float>) : Null<Float> {
+    setStyle(el, name, '$value');
+    return value;
+  }
 }

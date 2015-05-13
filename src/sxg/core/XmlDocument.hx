@@ -4,13 +4,17 @@ import sxg.Svg.*;
 using thx.Nulls;
 using thx.Strings;
 using thx.Iterators;
+using thx.Arrays;
+using thx.Maps;
 
 class XmlDocument implements Document<Xml> {
   var xml : Xml;
+  var styles : Map<Xml, Map<String, String>>;
   static var prefixes = [ SVG => "svg", XLINK => "xmlink", XMLNS => "xmlns" ];
 
   public function new(?xml : Xml) {
     this.xml = null == xml ? Xml.createDocument() : xml;
+    this.styles = new Map();
   }
 
   public function createElementNS(ns : String, name : String) : Xml {
@@ -66,12 +70,41 @@ class XmlDocument implements Document<Xml> {
   public function removeAttribute(el : Xml, name : String)
     el.remove(name);
 
-  static function format(node : Xml, ind : Int, def : { ns : String }) {
+  public function getStyle(el : Xml, name : String) : String {
+    var map = styles.get(el);
+    if(null == map) return null;
+    return map.get(name);
+  }
+
+  public function setStyle(el : Xml, name : String, value : String) : String {
+    var map = styles.get(el);
+    if(null == map) {
+      map = new Map();
+      styles.set(el, map);
+    }
+    map.set(name, value);
+    return value;
+  }
+
+  public function getFloatStyle(el : Xml, name : String) : Null<Float> {
+    var s = getStyle(el, name);
+    if(null == s)
+      return null;
+    return Std.parseFloat(s);
+  }
+
+  public function setFloatStyle(el : Xml, name : String, value : Null<Float>) : Null<Float> {
+    setStyle(el, name, '$value');
+    return value;
+  }
+
+  function format(node : Xml, ind : Int, def : { ns : String }) {
     var ws    = '  '.repeat(ind),
         ns    = node.get("xmlns"),
         attributes = formatAttributes(node, def),
+        styles = formatStyles(styles.get(node)),
         prefix = ns == def.ns ? "" : prefixes.get(ns) + ':',
-        open  = '$ws<$prefix${node.nodeName}$attributes>',
+        open  = '$ws<$prefix${node.nodeName}$styles$attributes>',
         close = '</${node.nodeName}>',
         children  = node.elements(),
         schildren = children.hasNext() ? children.map(function(child) {
@@ -81,7 +114,14 @@ class XmlDocument implements Document<Xml> {
     return open + (schildren == null ? "" : '\n$schildren\n$ws') + close;
   }
 
-  static function formatAttributes(node : Xml, def : { ns : String }) {
+  function formatStyles(map : Map<String, String>) : String {
+    if(null == map)
+      return "";
+    var rules = map.tuples().pluck('${_.left}: ${_.right}').join(";");
+    return ' style="$rules"';
+  }
+
+  function formatAttributes(node : Xml, def : { ns : String }) {
     return node
       .attributes()
       .filter(function(att) {
