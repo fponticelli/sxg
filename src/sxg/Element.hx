@@ -9,6 +9,7 @@ class Element<T : {}> {
   public var doc(default, null) : Document<T>;
   public var style(default, null) : Style<T>;
   public var transform(default, null) : Matrix23;
+  public var id(get, set) : String;
   var children : Map<T, Element<T>>;
 
   function new(doc : Document<T>, name : String) {
@@ -59,4 +60,10 @@ class Element<T : {}> {
 
   inline function createElement(name : String)
     return doc.createElementNS(Svg.SVG, name);
+
+  function get_id()
+    return doc.getAttribute(el, "id");
+
+  function set_id(v : String)
+    return doc.setAttribute(el, "id", v);
 }
