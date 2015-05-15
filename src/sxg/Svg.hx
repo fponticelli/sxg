@@ -16,10 +16,19 @@ class Svg<T : {}> extends Element<T> {
     return new Svg(new DomDocument(document), width, height);
   #end
 
+  @:isVar public var defs(get, null) : Defs<T>;
   public var size(default, null) : Size;
 
   function new(doc : Document<T>, width : Float, height : Float) {
     super(doc, "svg");
     this.size = Geom.linkedSize(doc, el, width, height);
+  }
+
+  function get_defs() : Defs<T> {
+    if(null == defs) {
+      defs = new Defs(doc);
+      doc.insertChild(el, defs.el, 0);
+    }
+    return defs;
   }
 }

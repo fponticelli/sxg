@@ -1,5 +1,4 @@
 (function (console) { "use strict";
-var $estr = function() { return js_Boot.__string_rec(this,''); };
 function $extend(from, fields) {
 	function Inherit() {} Inherit.prototype = from; var proto = new Inherit();
 	for (var name in fields) proto[name] = fields[name];
@@ -252,27 +251,20 @@ StringTools.hex = function(n,digits) {
 };
 var ValueType = { __ename__ : ["ValueType"], __constructs__ : ["TNull","TInt","TFloat","TBool","TObject","TFunction","TClass","TEnum","TUnknown"] };
 ValueType.TNull = ["TNull",0];
-ValueType.TNull.toString = $estr;
 ValueType.TNull.__enum__ = ValueType;
 ValueType.TInt = ["TInt",1];
-ValueType.TInt.toString = $estr;
 ValueType.TInt.__enum__ = ValueType;
 ValueType.TFloat = ["TFloat",2];
-ValueType.TFloat.toString = $estr;
 ValueType.TFloat.__enum__ = ValueType;
 ValueType.TBool = ["TBool",3];
-ValueType.TBool.toString = $estr;
 ValueType.TBool.__enum__ = ValueType;
 ValueType.TObject = ["TObject",4];
-ValueType.TObject.toString = $estr;
 ValueType.TObject.__enum__ = ValueType;
 ValueType.TFunction = ["TFunction",5];
-ValueType.TFunction.toString = $estr;
 ValueType.TFunction.__enum__ = ValueType;
-ValueType.TClass = function(c) { var $x = ["TClass",6,c]; $x.__enum__ = ValueType; $x.toString = $estr; return $x; };
-ValueType.TEnum = function(e) { var $x = ["TEnum",7,e]; $x.__enum__ = ValueType; $x.toString = $estr; return $x; };
+ValueType.TClass = function(c) { var $x = ["TClass",6,c]; $x.__enum__ = ValueType; return $x; };
+ValueType.TEnum = function(e) { var $x = ["TEnum",7,e]; $x.__enum__ = ValueType; return $x; };
 ValueType.TUnknown = ["TUnknown",8];
-ValueType.TUnknown.toString = $estr;
 ValueType.TUnknown.__enum__ = ValueType;
 var Type = function() { };
 Type.__name__ = ["Type"];
@@ -396,16 +388,21 @@ Xml.prototype = {
 		}
 		return false;
 	}
+	,insertChild: function(x,pos) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + this.nodeType);
+		if(x.parent != null) HxOverrides.remove(x.parent.children,x);
+		this.children.splice(pos,0,x);
+		x.parent = this;
+	}
 	,__class__: Xml
 };
 var haxe_StackItem = { __ename__ : ["haxe","StackItem"], __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"] };
 haxe_StackItem.CFunction = ["CFunction",0];
-haxe_StackItem.CFunction.toString = $estr;
 haxe_StackItem.CFunction.__enum__ = haxe_StackItem;
-haxe_StackItem.Module = function(m) { var $x = ["Module",1,m]; $x.__enum__ = haxe_StackItem; $x.toString = $estr; return $x; };
-haxe_StackItem.FilePos = function(s,file,line) { var $x = ["FilePos",2,s,file,line]; $x.__enum__ = haxe_StackItem; $x.toString = $estr; return $x; };
-haxe_StackItem.Method = function(classname,method) { var $x = ["Method",3,classname,method]; $x.__enum__ = haxe_StackItem; $x.toString = $estr; return $x; };
-haxe_StackItem.LocalFunction = function(v) { var $x = ["LocalFunction",4,v]; $x.__enum__ = haxe_StackItem; $x.toString = $estr; return $x; };
+haxe_StackItem.Module = function(m) { var $x = ["Module",1,m]; $x.__enum__ = haxe_StackItem; return $x; };
+haxe_StackItem.FilePos = function(s,file,line) { var $x = ["FilePos",2,s,file,line]; $x.__enum__ = haxe_StackItem; return $x; };
+haxe_StackItem.Method = function(classname,method) { var $x = ["Method",3,classname,method]; $x.__enum__ = haxe_StackItem; return $x; };
+haxe_StackItem.LocalFunction = function(v) { var $x = ["LocalFunction",4,v]; $x.__enum__ = haxe_StackItem; return $x; };
 var haxe_CallStack = function() { };
 haxe_CallStack.__name__ = ["haxe","CallStack"];
 haxe_CallStack.getStack = function(e) {
@@ -829,6 +826,12 @@ sxg_Element.prototype = {
 	,createElement: function(name) {
 		return this.doc.createElementNS("http://www.w3.org/2000/svg",name);
 	}
+	,get_id: function() {
+		return this.doc.getAttribute(this.el,"id");
+	}
+	,set_id: function(v) {
+		return this.doc.setAttribute(this.el,"id",v);
+	}
 	,__class__: sxg_Element
 };
 var sxg_Arc = function(doc,cx,cy,startAngle,endAngle,innerRadius,outerRadius) {
@@ -908,6 +911,22 @@ sxg_Circle.prototype = $extend(sxg_Element.prototype,{
 	shape: null
 	,__class__: sxg_Circle
 });
+var sxg_Defs = function(doc) {
+	sxg_Element.call(this,doc,"defs");
+};
+sxg_Defs.__name__ = ["sxg","Defs"];
+sxg_Defs.__super__ = sxg_Element;
+sxg_Defs.prototype = $extend(sxg_Element.prototype,{
+	pattern: function(id,width,height,x,y) {
+		if(y == null) y = 0;
+		if(x == null) x = 0;
+		if(null == id) id = "Def_" + ++sxg_Defs._id;
+		var p = new sxg_Pattern(this.doc,id,x,y,width,height);
+		this.add(p);
+		return p;
+	}
+	,__class__: sxg_Defs
+});
 var sxg_Font = function(doc,el) {
 	this.doc = doc;
 	this.el = el;
@@ -938,13 +957,12 @@ sxg_Group.__super__ = sxg_Element;
 sxg_Group.prototype = $extend(sxg_Element.prototype,{
 	__class__: sxg_Group
 });
-var sxg_Paint = { __ename__ : ["sxg","Paint"], __constructs__ : ["None","Color","Inherit"] };
+var sxg_Paint = { __ename__ : ["sxg","Paint"], __constructs__ : ["None","Color","Url","Inherit"] };
 sxg_Paint.None = ["None",0];
-sxg_Paint.None.toString = $estr;
 sxg_Paint.None.__enum__ = sxg_Paint;
-sxg_Paint.Color = function(color) { var $x = ["Color",1,color]; $x.__enum__ = sxg_Paint; $x.toString = $estr; return $x; };
-sxg_Paint.Inherit = ["Inherit",2];
-sxg_Paint.Inherit.toString = $estr;
+sxg_Paint.Color = function(color) { var $x = ["Color",1,color]; $x.__enum__ = sxg_Paint; return $x; };
+sxg_Paint.Url = function(url) { var $x = ["Url",2,url]; $x.__enum__ = sxg_Paint; return $x; };
+sxg_Paint.Inherit = ["Inherit",3];
 sxg_Paint.Inherit.__enum__ = sxg_Paint;
 var sxg_Paints = function() { };
 sxg_Paints.__name__ = ["sxg","Paints"];
@@ -952,7 +970,7 @@ sxg_Paints.getPaint = function(doc,el,attribute,useAlpha) {
 	if(useAlpha == null) useAlpha = true;
 	var alpha = "" + attribute + "-opacity";
 	var s = doc.getStyle(el,attribute);
-	if(null == s) return sxg_Paint.Inherit; else if(s == "none") return sxg_Paint.None; else {
+	if(null == s) return sxg_Paint.Inherit; else if(s == "none") return sxg_Paint.None; else if(sxg_Paints.URL_PATTERN.match(s)) return sxg_Paint.Url(sxg_Paints.URL_PATTERN.matched(1)); else {
 		var c = thx_color_Color.parse(s);
 		if(useAlpha) {
 			var a = doc.getFloatStyle(el,alpha);
@@ -969,7 +987,7 @@ sxg_Paints.apply = function(paint,doc,el,attribute,useAlpha) {
 		doc.setStyle(el,attribute,"none");
 		if(useAlpha) doc.removeStyle(el,alpha);
 		break;
-	case 2:
+	case 3:
 		doc.removeStyle(el,attribute);
 		doc.removeStyle(el,alpha);
 		break;
@@ -979,6 +997,10 @@ sxg_Paints.apply = function(paint,doc,el,attribute,useAlpha) {
 		if(useAlpha) {
 			if(color[3] < 1) doc.setFloatStyle(el,alpha,color[3]); else doc.removeStyle(el,alpha);
 		}
+		break;
+	case 2:
+		var url = paint[2];
+		doc.setStyle(el,attribute,"url(" + url + ")");
 		break;
 	}
 };
@@ -1002,6 +1024,20 @@ sxg_Path.prototype = $extend(sxg_Element.prototype,{
 		return path;
 	}
 	,__class__: sxg_Path
+});
+var sxg_Pattern = function(doc,id,x,y,width,height) {
+	sxg_Element.call(this,doc,"pattern");
+	this.set_id(id);
+	this.position = sxg_core_Geom.linkedPosition(doc,this.el,"x","y",x,y);
+	this.size = sxg_core_Geom.linkedSize(doc,this.el,width,height);
+	doc.setAttribute(this.el,"patternUnits","userSpaceOnUse");
+};
+sxg_Pattern.__name__ = ["sxg","Pattern"];
+sxg_Pattern.__super__ = sxg_Element;
+sxg_Pattern.prototype = $extend(sxg_Element.prototype,{
+	position: null
+	,size: null
+	,__class__: sxg_Pattern
 });
 var sxg_Rect = function(doc,x,y,w,h) {
 	sxg_Element.call(this,doc,"rect");
@@ -1058,7 +1094,15 @@ sxg_Svg.dom = function(width,height,document) {
 };
 sxg_Svg.__super__ = sxg_Element;
 sxg_Svg.prototype = $extend(sxg_Element.prototype,{
-	size: null
+	defs: null
+	,size: null
+	,get_defs: function() {
+		if(null == this.defs) {
+			this.defs = new sxg_Defs(this.doc);
+			this.doc.insertChild(this.el,this.defs.el,0);
+		}
+		return this.defs;
+	}
 	,__class__: sxg_Svg
 });
 var sxg_Text = function(doc,x,y,content) {
@@ -1109,6 +1153,7 @@ sxg_core_Document.prototype = {
 	createElementNS: null
 	,elementToString: null
 	,appendChild: null
+	,insertChild: null
 	,removeChild: null
 	,getAttribute: null
 	,setAttribute: null
@@ -1143,6 +1188,9 @@ sxg_core_DomDocument.prototype = {
 	,appendChild: function(parent,child) {
 		parent.appendChild(child);
 	}
+	,insertChild: function(parent,child,position) {
+		parent.insertBefore(child,parent.childNodes[position]);
+	}
 	,removeChild: function(parent,child) {
 		parent.removeChild(child);
 	}
@@ -1161,7 +1209,7 @@ sxg_core_DomDocument.prototype = {
 		if(null == v) return null; else return parseFloat(v);
 	}
 	,setFloatAttribute: function(el,name,value) {
-		if(null == value) el.removeAttribute(name); else el.setAttribute(name,"" + value);
+		if(null == value) el.removeAttribute(name); else el.setAttribute(name,"" + thx_Floats.roundTo(value,6));
 		return value;
 	}
 	,getStyle: function(el,name) {
@@ -1177,7 +1225,7 @@ sxg_core_DomDocument.prototype = {
 		return parseFloat(s);
 	}
 	,setFloatStyle: function(el,name,value) {
-		this.setStyle(el,name,"" + value);
+		this.setStyle(el,name,"" + thx_Floats.roundTo(value,6));
 		return value;
 	}
 	,removeStyle: function(el,name) {
@@ -1330,7 +1378,6 @@ sxg_core_Geom.linkedMatrix = function(doc,el,src) {
 	updateTransform = function() {
 		if(thx_geom__$Matrix23_Matrix23_$Impl_$.equals(m,thx_geom__$Matrix23_Matrix23_$Impl_$.identity)) doc.removeAttribute(el,"transform"); else {
 			var s = thx_geom__$Matrix23_Matrix23_$Impl_$.toString(m);
-			console.log("transform=\"" + s + "\"");
 			doc.setAttribute(el,"transform",s);
 		}
 	};
@@ -1364,6 +1411,9 @@ sxg_core_XmlDocument.prototype = {
 	,appendChild: function(parent,child) {
 		parent.addChild(child);
 	}
+	,insertChild: function(parent,child,position) {
+		parent.insertChild(child,position);
+	}
 	,removeChild: function(parent,child) {
 		parent.removeChild(child);
 	}
@@ -1379,7 +1429,7 @@ sxg_core_XmlDocument.prototype = {
 		if(null == v) return null; else return parseFloat(v);
 	}
 	,setFloatAttribute: function(el,name,value) {
-		if(null == value) el.remove(name); else el.set(name,"" + value);
+		if(null == value) el.remove(name); else el.set(name,"" + thx_Floats.roundTo(value,6));
 		return value;
 	}
 	,removeAttribute: function(el,name) {
@@ -1405,7 +1455,7 @@ sxg_core_XmlDocument.prototype = {
 		return parseFloat(s);
 	}
 	,setFloatStyle: function(el,name,value) {
-		this.setStyle(el,name,"" + value);
+		this.setStyle(el,name,"" + thx_Floats.roundTo(value,6));
 		return value;
 	}
 	,removeStyle: function(el,name) {
@@ -1416,14 +1466,14 @@ sxg_core_XmlDocument.prototype = {
 	,getTextContent: function(el) {
 		var $it0 = (function($this) {
 			var $r;
-			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType);
+			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError(new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType));
 			$r = HxOverrides.iter(el.children);
 			return $r;
 		}(this));
 		while( $it0.hasNext() ) {
 			var child = $it0.next();
 			if(child.nodeType == Xml.CData) {
-				if(child.nodeType == Xml.Document || child.nodeType == Xml.Element) throw new js__$Boot_HaxeError("Bad node type, unexpected " + child.nodeType);
+				if(child.nodeType == Xml.Document || child.nodeType == Xml.Element) throw new js__$Boot_HaxeError(new js__$Boot_HaxeError("Bad node type, unexpected " + child.nodeType));
 				return child.nodeValue;
 			}
 		}
@@ -1433,7 +1483,7 @@ sxg_core_XmlDocument.prototype = {
 		var child;
 		while(null != ((function($this) {
 			var $r;
-			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType);
+			if(el.nodeType != Xml.Document && el.nodeType != Xml.Element) throw new js__$Boot_HaxeError(new js__$Boot_HaxeError("Bad node type, expected Element or Document but found " + el.nodeType));
 			$r = child = el.children[0];
 			return $r;
 		}(this)))) el.removeChild(child);
@@ -1451,14 +1501,14 @@ sxg_core_XmlDocument.prototype = {
 		var open;
 		open = "" + ws + "<" + prefix + (function($this) {
 			var $r;
-			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
+			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError(new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType));
 			$r = node.nodeName;
 			return $r;
 		}(this)) + styles + attributes + ">";
 		var close;
 		close = "</" + (function($this) {
 			var $r;
-			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType);
+			if(node.nodeType != Xml.Element) throw new js__$Boot_HaxeError(new js__$Boot_HaxeError("Bad node type, expected Element but found " + node.nodeType));
 			$r = node.nodeName;
 			return $r;
 		}(this)) + ">";
@@ -2601,7 +2651,6 @@ thx_Maps.isMap = function(v) {
 };
 var thx_Nil = { __ename__ : ["thx","Nil"], __constructs__ : ["nil"] };
 thx_Nil.nil = ["nil",0];
-thx_Nil.nil.toString = $estr;
 thx_Nil.nil.__enum__ = thx_Nil;
 var thx_Nulls = function() { };
 thx_Nulls.__name__ = ["thx","Nulls"];
@@ -3130,7 +3179,7 @@ thx_color__$CIELCh_CIELCh_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
 };
 thx_color__$CIELCh_CIELCh_$Impl_$.toString = function(this1) {
-	return "CIELCh(" + this1[0] + "," + this1[1] + "," + this1[2] + ")";
+	return "CIELCh(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + ")";
 };
 thx_color__$CIELCh_CIELCh_$Impl_$.toCIELab = function(this1) {
 	var hradi = this1[2] * (Math.PI / 180);
@@ -3253,7 +3302,7 @@ thx_color__$CIELab_CIELab_$Impl_$.withB = function(this1,newb) {
 	return [this1[0],this1[1],newb];
 };
 thx_color__$CIELab_CIELab_$Impl_$.toString = function(this1) {
-	return "CIELab(" + this1[0] + "," + this1[1] + "," + this1[2] + ")";
+	return "CIELab(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + ")";
 };
 thx_color__$CIELab_CIELab_$Impl_$.toCIELCh = function(this1) {
 	var h = thx_Floats.wrapCircular(Math.atan2(this1[2],this1[1]) * 180 / Math.PI,360);
@@ -3356,7 +3405,7 @@ thx_color__$CMY_CMY_$Impl_$.withYellow = function(this1,newyellow) {
 	return [this1[0],this1[1],newyellow < 0?0:newyellow > 1?1:newyellow];
 };
 thx_color__$CMY_CMY_$Impl_$.toString = function(this1) {
-	return "cmy(" + this1[0] + "," + this1[1] + "," + this1[2] + ")";
+	return "cmy(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + ")";
 };
 thx_color__$CMY_CMY_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
@@ -3462,7 +3511,7 @@ thx_color__$CMYK_CMYK_$Impl_$.withBlack = function(this1,newblack) {
 	return [this1[0],this1[1],this1[2],newblack < 0?0:newblack > 1?1:newblack];
 };
 thx_color__$CMYK_CMYK_$Impl_$.toString = function(this1) {
-	return "cmyk(" + this1[0] + "," + this1[1] + "," + this1[2] + "," + this1[3] + ")";
+	return "cmyk(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + "," + thx_Floats.roundTo(this1[3],6) + ")";
 };
 thx_color__$CMYK_CMYK_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10 && Math.abs(this1[3] - other[3]) <= 10e-10;
@@ -3608,7 +3657,7 @@ thx_color__$Grey_Grey_$Impl_$.interpolate = function(this1,other,t) {
 	return grey;
 };
 thx_color__$Grey_Grey_$Impl_$.toString = function(this1) {
-	return "grey(" + this1 * 100 + "%)";
+	return "grey(" + thx_Floats.roundTo(this1 * 100,6) + "%)";
 };
 thx_color__$Grey_Grey_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1 - other) <= 10e-10;
@@ -3747,7 +3796,7 @@ thx_color__$HSL_HSL_$Impl_$.toCSS3 = function(this1) {
 	return thx_color__$HSL_HSL_$Impl_$.toString(this1);
 };
 thx_color__$HSL_HSL_$Impl_$.toString = function(this1) {
-	return "hsl(" + this1[0] + "," + this1[1] * 100 + "%," + this1[2] * 100 + "%)";
+	return "hsl(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%)";
 };
 thx_color__$HSL_HSL_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
@@ -3901,7 +3950,7 @@ thx_color__$HSLA_HSLA_$Impl_$.toCSS3 = function(this1) {
 	return thx_color__$HSLA_HSLA_$Impl_$.toString(this1);
 };
 thx_color__$HSLA_HSLA_$Impl_$.toString = function(this1) {
-	return "hsla(" + this1[0] + "," + this1[1] * 100 + "%," + this1[2] * 100 + "%," + this1[3] + ")";
+	return "hsla(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%," + thx_Floats.roundTo(this1[3],6) + ")";
 };
 thx_color__$HSLA_HSLA_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10 && Math.abs(this1[3] - other[3]) <= 10e-10;
@@ -4026,7 +4075,7 @@ thx_color__$HSV_HSV_$Impl_$.withSaturation = function(this1,newsaturation) {
 	return [this1[0],newsaturation < 0?0:newsaturation > 1?1:newsaturation,this1[2]];
 };
 thx_color__$HSV_HSV_$Impl_$.toString = function(this1) {
-	return "hsv(" + this1[0] + "," + this1[1] * 100 + "%," + this1[2] * 100 + "%)";
+	return "hsv(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%)";
 };
 thx_color__$HSV_HSV_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
@@ -4207,7 +4256,7 @@ thx_color__$HSVA_HSVA_$Impl_$.withSaturation = function(this1,newsaturation) {
 	return [this1[0],newsaturation < 0?0:newsaturation > 1?1:newsaturation,this1[2],this1[3]];
 };
 thx_color__$HSVA_HSVA_$Impl_$.toString = function(this1) {
-	return "hsva(" + this1[0] + "," + this1[1] * 100 + "%," + this1[2] * 100 + "%," + this1[3] + ")";
+	return "hsva(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%," + thx_Floats.roundTo(this1[3],6) + ")";
 };
 thx_color__$HSVA_HSVA_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10 && Math.abs(this1[3] - other[3]) <= 10e-10;
@@ -4754,7 +4803,7 @@ thx_color__$RGBXA_RGBXA_$Impl_$.toCSS3 = function(this1) {
 	return thx_color__$RGBXA_RGBXA_$Impl_$.toString(this1);
 };
 thx_color__$RGBXA_RGBXA_$Impl_$.toString = function(this1) {
-	return "rgba(" + this1[0] * 100 + "%," + this1[1] * 100 + "%," + this1[2] * 100 + "%," + this1[3] + ")";
+	return "rgba(" + thx_Floats.roundTo(this1[0] * 100,6) + "%," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%," + thx_Floats.roundTo(this1[3],6) + ")";
 };
 thx_color__$RGBXA_RGBXA_$Impl_$.toHex = function(this1,prefix) {
 	if(prefix == null) prefix = "#";
@@ -4847,7 +4896,7 @@ thx_color__$XYZ_XYZ_$Impl_$.withZ = function(this1,newz) {
 	return [this1[0],this1[1],newz];
 };
 thx_color__$XYZ_XYZ_$Impl_$.toString = function(this1) {
-	return "XYZ(" + this1[0] + "," + this1[1] + "," + this1[2] + ")";
+	return "XYZ(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + ")";
 };
 thx_color__$XYZ_XYZ_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
@@ -4958,7 +5007,7 @@ thx_color__$Yxy_Yxy_$Impl_$.withZ = function(this1,newy2) {
 	return [this1[0],this1[1],this1[2]];
 };
 thx_color__$Yxy_Yxy_$Impl_$.toString = function(this1) {
-	return "Yxy(" + this1[0] + "," + this1[1] + "," + this1[2] + ")";
+	return "Yxy(" + thx_Floats.roundTo(this1[0],6) + "," + thx_Floats.roundTo(this1[1],6) + "," + thx_Floats.roundTo(this1[2],6) + ")";
 };
 thx_color__$Yxy_Yxy_$Impl_$.equals = function(this1,other) {
 	return Math.abs(this1[0] - other[0]) <= 10e-10 && Math.abs(this1[1] - other[1]) <= 10e-10 && Math.abs(this1[2] - other[2]) <= 10e-10;
@@ -5168,12 +5217,12 @@ thx_color_parse_ColorInfo.prototype = {
 	,__class__: thx_color_parse_ColorInfo
 };
 var thx_color_parse_ChannelInfo = { __ename__ : ["thx","color","parse","ChannelInfo"], __constructs__ : ["CIPercent","CIFloat","CIDegree","CIInt8","CIInt","CIBool"] };
-thx_color_parse_ChannelInfo.CIPercent = function(value) { var $x = ["CIPercent",0,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
-thx_color_parse_ChannelInfo.CIFloat = function(value) { var $x = ["CIFloat",1,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
-thx_color_parse_ChannelInfo.CIDegree = function(value) { var $x = ["CIDegree",2,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
-thx_color_parse_ChannelInfo.CIInt8 = function(value) { var $x = ["CIInt8",3,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
-thx_color_parse_ChannelInfo.CIInt = function(value) { var $x = ["CIInt",4,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
-thx_color_parse_ChannelInfo.CIBool = function(value) { var $x = ["CIBool",5,value]; $x.__enum__ = thx_color_parse_ChannelInfo; $x.toString = $estr; return $x; };
+thx_color_parse_ChannelInfo.CIPercent = function(value) { var $x = ["CIPercent",0,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
+thx_color_parse_ChannelInfo.CIFloat = function(value) { var $x = ["CIFloat",1,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
+thx_color_parse_ChannelInfo.CIDegree = function(value) { var $x = ["CIDegree",2,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
+thx_color_parse_ChannelInfo.CIInt8 = function(value) { var $x = ["CIInt8",3,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
+thx_color_parse_ChannelInfo.CIInt = function(value) { var $x = ["CIInt",4,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
+thx_color_parse_ChannelInfo.CIBool = function(value) { var $x = ["CIBool",5,value]; $x.__enum__ = thx_color_parse_ChannelInfo; return $x; };
 var thx_error_ErrorWrapper = function(message,innerError,stack,pos) {
 	thx_Error.call(this,message,stack,pos);
 	this.innerError = innerError;
@@ -8566,6 +8615,8 @@ Xml.CData = 2;
 Xml.Document = 6;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = {}.toString;
+sxg_Defs._id = 0;
+sxg_Paints.URL_PATTERN = new EReg("^\\s*url\\(([^)]+)\\)\\s$","");
 sxg_Svg.SVG = "http://www.w3.org/2000/svg";
 sxg_Svg.XMLNS = "http://www.w3.org/2000/xmlns/";
 sxg_Svg.XLINK = "http://www.w3.org/1999/xlink";
