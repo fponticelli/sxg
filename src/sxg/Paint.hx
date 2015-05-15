@@ -7,10 +7,12 @@ import thx.color.Color as C;
 enum Paint {
   None;
   Color(color : RGBXA);
+  Url(url : String);
   Inherit;
 }
 
 class Paints {
+  static var URL_PATTERN = ~/^\s*url\(([^)]+)\)\s$/;
   public static function getPaint<T>(doc : Document<T>, el : T, attribute : String, useAlpha = true) {
     var alpha = '$attribute-opacity';
     var s = doc.getStyle(el, attribute);
@@ -18,7 +20,9 @@ class Paints {
       return Inherit;
     else if(s == "none")
       return None;
-    else {
+    else if(URL_PATTERN.match(s)) {
+      return Url(URL_PATTERN.matched(1));
+    } else {
       var c = C.parse(s);
       if(useAlpha) {
         var a = doc.getFloatStyle(el, alpha);
@@ -47,6 +51,8 @@ class Paints {
           else
             doc.removeStyle(el, alpha);
         }
+      case Url(url):
+        doc.setStyle(el, attribute, 'url($url)');
     }
   }
 }
