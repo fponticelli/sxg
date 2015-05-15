@@ -926,7 +926,7 @@ sxg_Font.prototype = {
 		return this.doc.getFloatStyle(this.el,"font-family");
 	}
 	,set_size: function(v) {
-		return this.doc.setFloatStyle(this.el,"font-family",v);
+		return this.doc.setFloatStyle(this.el,"font-size",v);
 	}
 	,__class__: sxg_Font
 };
@@ -4556,7 +4556,7 @@ thx_color__$RGBX_RGBX_$Impl_$.toCSS3 = function(this1) {
 	return thx_color__$RGBX_RGBX_$Impl_$.toString(this1);
 };
 thx_color__$RGBX_RGBX_$Impl_$.toString = function(this1) {
-	return "rgb(" + this1[0] * 100 + "%," + this1[1] * 100 + "%," + this1[2] * 100 + "%)";
+	return "rgb(" + thx_Floats.roundTo(this1[0] * 100,6) + "%," + thx_Floats.roundTo(this1[1] * 100,6) + "%," + thx_Floats.roundTo(this1[2] * 100,6) + "%)";
 };
 thx_color__$RGBX_RGBX_$Impl_$.toHex = function(this1,prefix) {
 	if(prefix == null) prefix = "#";

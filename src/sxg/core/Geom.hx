@@ -75,7 +75,6 @@ class Geom {
         doc.removeAttribute(el, "transform");
       else {
         var s = m.toString();
-        trace('transform="$s"');
         doc.setAttribute(el, "transform", s);
       }
     }

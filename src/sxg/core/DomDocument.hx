@@ -2,6 +2,7 @@ package sxg.core;
 
 import js.html.Document as Doc;
 import js.html.Element as El;
+using thx.Floats;
 
 class DomDocument implements Document<El> {
   var doc : Doc;
@@ -48,7 +49,7 @@ class DomDocument implements Document<El> {
     if(null == value)
       el.removeAttribute(name);
     else
-      el.setAttribute(name, ""+value);
+      el.setAttribute(name, '${value.roundTo(6)}');
     return value;
   }
 
@@ -68,7 +69,7 @@ class DomDocument implements Document<El> {
   }
 
   public function setFloatStyle(el : El, name : String, value : Null<Float>) : Null<Float> {
-    setStyle(el, name, '$value');
+    setStyle(el, name, '${value.roundTo(6)}');
     return value;
   }
 

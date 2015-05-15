@@ -2,6 +2,7 @@ package sxg.core;
 
 import sxg.Svg.*;
 using thx.Nulls;
+using thx.Floats;
 using thx.Strings;
 using thx.Iterators;
 using thx.Arrays;
@@ -63,7 +64,7 @@ class XmlDocument implements Document<Xml> {
     if(null == value)
       el.remove(name);
     else
-      el.set(name, ""+value);
+      el.set(name, '${value.roundTo(6)}');
     return value;
   }
 
@@ -94,7 +95,7 @@ class XmlDocument implements Document<Xml> {
   }
 
   public function setFloatStyle(el : Xml, name : String, value : Null<Float>) : Null<Float> {
-    setStyle(el, name, '$value');
+    setStyle(el, name, '${value.roundTo(6)}');
     return value;
   }
 
