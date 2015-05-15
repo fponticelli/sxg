@@ -20,6 +20,9 @@ class DomDocument implements Document<El> {
   public function appendChild(parent : El, child : El)
     parent.appendChild(child);
 
+  public function insertChild(parent : El, child : El, position : Int)
+    parent.insertBefore(child, parent.childNodes[position]);
+
   public function removeChild(parent : El, child : El)
     parent.removeChild(child);
 

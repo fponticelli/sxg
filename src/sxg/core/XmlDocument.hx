@@ -38,6 +38,9 @@ class XmlDocument implements Document<Xml> {
   public function appendChild(parent : Xml, child : Xml)
     parent.addChild(child);
 
+  public function insertChild(parent : Xml, child : Xml, position : Int)
+    parent.insertChild(child, position);
+
   public function removeChild(parent : Xml, child : Xml)
     parent.removeChild(child);
 

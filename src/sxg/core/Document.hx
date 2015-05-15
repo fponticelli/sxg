@@ -4,6 +4,7 @@ interface Document<T> {
   function createElementNS(ns : String, name : String) : T;
   function elementToString(el : T, ?pretty : Bool = false) : String;
   function appendChild(parent : T, child : T) : Void;
+  function insertChild(parent : T, child : T, position : Int) : Void;
   function removeChild(parent : T, child : T) : Void;
   function getAttribute(el : T, name : String) : String;
   function setAttribute(el : T, name : String, value : String) : String;
