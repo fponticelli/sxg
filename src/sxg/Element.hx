@@ -10,6 +10,7 @@ class Element<T : {}> {
   public var style(default, null) : Style<T>;
   public var transform(default, null) : Matrix23;
   public var id(get, set) : String;
+  public var className(get, set) : String;
   var children : Map<T, Element<T>>;
 
   function new(doc : Document<T>, name : String) {
@@ -66,4 +67,10 @@ class Element<T : {}> {
 
   function set_id(v : String)
     return doc.setAttribute(el, "id", v);
+
+  function get_className()
+    return doc.getAttribute(el, "class");
+
+  function set_className(v : String)
+    return doc.setAttribute(el, "class", v);
 }
