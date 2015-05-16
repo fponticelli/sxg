@@ -56,6 +56,12 @@ class Element<T : {}> {
     return element;
   }
 
+  public function setData(key : String, value : String)
+    doc.setAttribute(el, 'data-$key', value);
+
+  public function getData(key : String)
+    return doc.getAttribute(el, 'data-$key');
+
   public function toString()
     return doc.elementToString(el);
 
