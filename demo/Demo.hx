@@ -1,6 +1,6 @@
 import sxg.*;
 import sxg.core.*;
-import thx.color.HSLA;
+import thx.color.Hsla;
 
 class Demo {
   static function main() {
@@ -28,10 +28,10 @@ class Demo {
     a.shape.center.x = 150;
 
     svg.circle(100, 200, 50)
-      .style.fill = Color(HSLA.create(90, 0.5, 0.7, 0.95));
+      .style.fill = Color(Hsla.create(90, 0.5, 0.7, 0.95));
 
     var arc = svg.arc(100, 200, -100, 200, 65, 70);
-    arc.style.fill = Color(HSLA.create(270, 0.5, 0.7, 0.5));
-    arc.style.stroke = Color(HSLA.create(90, 0.5, 0.7, 1));
+    arc.style.fill = Color(Hsla.create(270, 0.5, 0.7, 0.5));
+    arc.style.stroke = Color(Hsla.create(90, 0.5, 0.7, 1));
   }
 }

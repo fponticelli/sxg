@@ -1,12 +1,12 @@
 package sxg;
 
 import sxg.core.Document;
-import thx.color.RGBXA;
+import thx.color.Rgbxa;
 import thx.color.Color as C;
 
 enum Paint {
   None;
-  Color(color : RGBXA);
+  Color(color : Rgbxa);
   Url(url : String);
   Inherit;
 }
@@ -44,7 +44,7 @@ class Paints {
         doc.removeStyle(el, attribute);
         doc.removeStyle(el, alpha);
       case Color(color):
-        doc.setStyle(el, attribute, color.toRGBX().toCSS3());
+        doc.setStyle(el, attribute, color.toRgbx().toCss3());
         if(useAlpha) {
           if(color.alphaf < 1)
             doc.setFloatStyle(el, alpha, color.alphaf);
