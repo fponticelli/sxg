@@ -3,6 +3,7 @@ package sxg.core;
 import sxg.Svg.*;
 using thx.Nulls;
 using thx.Floats;
+using thx.Functions;
 using thx.Strings;
 using thx.Iterators;
 using thx.Arrays;
@@ -143,7 +144,7 @@ class XmlDocument implements Document<Xml> {
   function formatStyles(map : Map<String, String>) : String {
     if(null == map)
       return "";
-    var rules = map.tuples().pluck('${_.left}:${_.right}').join("; ");
+    var rules = map.tuples().map.fn('${_.left}:${_.right}').join("; ");
     return ' style="$rules"';
   }
 
